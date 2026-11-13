@@ -62,6 +62,10 @@
             <span>3. Question Database</span>
             <span id="dbCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-stone-200 text-stone-800">0</span>
           </button>
+          <button type="button" data-tab="joseki" class="module-tab px-3 py-1 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition flex items-center gap-1.5">
+            <span>4. Go Joseki</span>
+            <span id="josekiCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-stone-200 text-stone-800">0</span>
+          </button>
         </nav>
       </div>
 
@@ -138,23 +142,66 @@
             Clear [X]
           </button>
           <button type="button" id="btnOpenSaveModal" title="Save current board position to your Question Database (Shortcut: Q)" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition shadow-sm">
-            + Save as Question [Q]
+            + Save Question [Q]
+          </button>
+          <button type="button" id="btnOpenSaveJosekiModal" title="Save ordered moves as a Joseki (Shortcut: J)" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-sm">
+            + Save Joseki [J]
           </button>
         </div>
       </div>
 
-      <!-- Active Loaded Question / Shape Banner (shown when practicing a saved question or shape) -->
-      <div id="activeStudyBar" class="hidden bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div class="flex items-center gap-2 text-amber-900">
-          <span class="font-semibold" id="activeStudyTitle">Loaded Position</span>
-          <span class="text-amber-700" id="activeStudySub"></span>
+      <!-- Active Loaded Question / Shape / Joseki Banner -->
+      <div id="activeStudyBar" class="hidden bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5 flex flex-col gap-2 text-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2 text-amber-900 flex-wrap">
+            <span class="font-semibold" id="activeStudyTitle">Loaded Position</span>
+            <span id="activeDifficultyBadge" class="hidden px-2 py-0.5 rounded-full text-[11px] font-semibold border"></span>
+            <span class="text-amber-700" id="activeStudySub"></span>
+          </div>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <!-- Multi-solution selector for Questions & Go Shapes -->
+            <div id="solutionPickerGroup" class="hidden items-center gap-1">
+              <select id="solutionSelect" aria-label="Select saved solution" class="px-2 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 focus:outline-none"></select>
+              <button type="button" id="btnShowQuestionSolution" class="px-2.5 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">
+                Replay Sol
+              </button>
+              <button type="button" id="btnDeleteSelectedSolution" title="Delete selected solution" class="px-2 py-1 rounded-lg font-medium bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 transition">
+                Delete Sol
+              </button>
+            </div>
+
+            <!-- Step-by-step replay controls -->
+            <div id="josekiReplayControls" class="hidden items-center gap-1 mr-1">
+              <button type="button" id="btnJosekiFirst" title="Go to start" class="px-2 py-1 rounded-lg font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">|&lt;</button>
+              <button type="button" id="btnJosekiPrev" title="Previous move" class="px-2.5 py-1 rounded-lg font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">&lt;</button>
+              <span id="josekiStepLabel" class="px-2 text-xs font-semibold text-amber-900 tabular-nums">0 / 0</span>
+              <button type="button" id="btnJosekiNext" title="Next move" class="px-2.5 py-1 rounded-lg font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">&gt;</button>
+              <button type="button" id="btnJosekiLast" title="Show all moves" class="px-2 py-1 rounded-lg font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">&gt;|</button>
+            </div>
+
+            <button type="button" id="btnSaveQuestionSolution" class="hidden px-2.5 py-1 rounded-lg font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+              + Save Correct Sol
+            </button>
+            <button type="button" id="btnSaveWrongSolution" class="hidden px-2.5 py-1 rounded-lg font-semibold bg-rose-600 text-white hover:bg-rose-700 transition">
+              + Save Wrong Sol
+            </button>
+            <button type="button" id="btnResetBaseline" class="px-2.5 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">
+              Reset to Start [R]
+            </button>
+            <button type="button" id="btnExitStudy" class="px-2 py-1 rounded-lg font-medium text-amber-700 hover:text-amber-900 transition">
+              Dismiss
+            </button>
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button type="button" id="btnResetBaseline" class="px-2.5 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">
-            Reset to Start Position [R]
-          </button>
-          <button type="button" id="btnExitStudy" class="px-2 py-1 rounded-lg font-medium text-amber-700 hover:text-amber-900 transition">
-            Dismiss
+
+        <!-- Per-Move Remark / Comment Bar (for Solutions & Joseki) -->
+        <div id="moveCommentBar" class="hidden pt-2 border-t border-amber-200/80 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+            <span id="moveCommentLabel" class="font-semibold text-amber-900 shrink-0">Move #1 Remark:</span>
+            <input id="moveCommentInput" type="text" placeholder="Add a remark/comment for this specific move..." class="w-full px-2.5 py-1 rounded-lg border border-amber-300 bg-white text-stone-800 focus:outline-none focus:border-amber-500">
+          </div>
+          <button type="button" id="btnSaveMoveComment" class="px-2.5 py-1 rounded-lg font-medium bg-amber-800 text-white hover:bg-amber-900 transition shrink-0">
+            Save Move Remark
           </button>
         </div>
       </div>
@@ -260,12 +307,82 @@
               <span id="currentFolderHeading" class="text-xs sm:text-sm font-semibold text-stone-800">All Questions</span>
               <span id="currentFolderSubCount" class="text-xs text-stone-500">(0)</span>
             </div>
-            <button type="button" id="btnDeleteCurrentFolder" class="hidden text-xs font-medium text-red-600 hover:text-red-800 transition">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs text-stone-500">Difficulty:</span>
+              <div id="difficultyFilterGroup" class="flex items-center gap-1 flex-wrap">
+                <button type="button" data-diff-filter="__ALL__" class="diff-filter-btn btn-active px-2 py-1 rounded-md text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 transition">All</button>
+                <button type="button" data-diff-filter="Easy" class="diff-filter-btn px-2 py-1 rounded-md text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 transition">Easy (DDK)</button>
+                <button type="button" data-diff-filter="Medium" class="diff-filter-btn px-2 py-1 rounded-md text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 transition">Medium (SDK)</button>
+                <button type="button" data-diff-filter="Hard" class="diff-filter-btn px-2 py-1 rounded-md text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 transition">Hard (Dan)</button>
+              </div>
+              <button type="button" id="btnDeleteCurrentFolder" class="hidden text-xs font-medium text-red-600 hover:text-red-800 transition ml-2">
+                Delete This Folder
+              </button>
+            </div>
+          </div>
+
+          <div id="questionsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         MODULE 4: GO JOSEKI (ORDERED MOVE SEQUENCES)
+         ========================================== -->
+    <section id="moduleJoseki" class="hidden flex-col gap-4">
+      <!-- Top Joseki Action Bar -->
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-sm sm:text-base font-semibold text-stone-900">Go Joseki Library</h2>
+          <p class="text-xs text-stone-500 mt-0.5">
+            Play out a joseki sequence in order on the Blank Board, then click <strong>+ Save Joseki [J]</strong> to store the exact move order and replay it step by step.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" id="btnGoToBoardFromJoseki" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-900 text-white hover:bg-stone-700 transition">
+            + Record New Joseki on Board
+          </button>
+          <button type="button" id="btnExportJoseki" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+            Export JSON
+          </button>
+          <label for="inputImportJoseki" class="cursor-pointer px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+            Import JSON
+          </label>
+          <input id="inputImportJoseki" type="file" accept=".json,application/json" class="hidden">
+        </div>
+      </div>
+
+      <!-- Main Joseki Layout: Folders Sidebar + Joseki Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Joseki Folders</span>
+            <span id="josekiFolderTotalCount" class="text-xs text-stone-400">0 folders</span>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <input id="newJosekiFolderInput" type="text" placeholder="New folder name..." class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-800 focus:outline-none focus:bg-white focus:border-stone-400">
+            <button type="button" id="btnCreateJosekiFolder" class="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-stone-900 text-white hover:bg-stone-700 transition">
+              Add
+            </button>
+          </div>
+
+          <div id="josekiFolderList" class="flex flex-col gap-1"></div>
+        </div>
+
+        <div class="md:col-span-3 flex flex-col gap-3">
+          <div class="bg-white rounded-xl px-4 py-2.5 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span id="currentJosekiFolderHeading" class="text-xs sm:text-sm font-semibold text-stone-800">All Joseki</span>
+              <span id="currentJosekiFolderSubCount" class="text-xs text-stone-500">(0)</span>
+            </div>
+            <button type="button" id="btnDeleteCurrentJosekiFolder" class="hidden text-xs font-medium text-red-600 hover:text-red-800 transition">
               Delete This Folder
             </button>
           </div>
 
-          <div id="questionsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+          <div id="josekiGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
         </div>
       </div>
     </section>
@@ -289,14 +406,22 @@
           <input id="qTitleInput" type="text" placeholder="e.g., Corner L-Group Life &amp; Death #1" class="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
         </div>
 
-        <div class="grid grid-cols-2 gap-2.5">
+        <div class="grid grid-cols-3 gap-2">
           <div>
             <label for="qFolderSelect" class="block font-medium text-stone-700 mb-1">Folder</label>
-            <select id="qFolderSelect" class="w-full px-2.5 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400"></select>
+            <select id="qFolderSelect" class="w-full px-2 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400"></select>
+          </div>
+          <div>
+            <label for="qDifficultySelect" class="block font-medium text-stone-700 mb-1">Difficulty Tag</label>
+            <select id="qDifficultySelect" class="w-full px-2 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
+              <option value="Easy">Easy (DDK)</option>
+              <option value="Medium" selected>Medium (SDK)</option>
+              <option value="Hard">Hard (Dan)</option>
+            </select>
           </div>
           <div>
             <label for="qFirstTurnSelect" class="block font-medium text-stone-700 mb-1">First to Play</label>
-            <select id="qFirstTurnSelect" class="w-full px-2.5 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
+            <select id="qFirstTurnSelect" class="w-full px-2 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
               <option value="1">Black to play</option>
               <option value="2">White to play</option>
             </select>
@@ -330,6 +455,60 @@
     </div>
   </div>
 
+  <!-- ==========================================
+       MODAL: SAVE CURRENT MOVE SEQUENCE AS JOSEKI
+       ========================================== -->
+  <div id="saveJosekiModal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl border border-stone-200 flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-semibold text-stone-900">Save Move Sequence as Joseki</h3>
+        <button type="button" id="btnCloseSaveJosekiModal" class="text-stone-400 hover:text-stone-700 text-sm font-semibold px-2 py-0.5 rounded">
+          ✕
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-3 text-xs">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-emerald-900 font-medium">
+          Recorded sequence: <span id="josekiMoveCountPreview">0 moves</span>
+        </div>
+
+        <div>
+          <label for="jTitleInput" class="block font-medium text-stone-700 mb-1">Joseki Name</label>
+          <input id="jTitleInput" type="text" placeholder="e.g., 3-3 Invasion (Basic)" class="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
+        </div>
+
+        <div>
+          <label for="jFolderSelect" class="block font-medium text-stone-700 mb-1">Folder</label>
+          <select id="jFolderSelect" class="w-full px-2.5 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400"></select>
+        </div>
+
+        <div>
+          <label for="jNewFolderModalInput" class="block font-medium text-stone-700 mb-1">Or Create a New Folder (Optional)</label>
+          <div class="flex items-center gap-1.5">
+            <input id="jNewFolderModalInput" type="text" placeholder="Type new folder name..." class="w-full px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
+            <button type="button" id="btnAddJosekiFolderInModal" class="shrink-0 px-2.5 py-1.5 rounded-lg font-medium bg-stone-200 text-stone-800 hover:bg-stone-300 transition">
+              + Folder
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label for="jNotesInput" class="block font-medium text-stone-700 mb-1">Notes / Key Ideas (Optional)</label>
+          <textarea id="jNotesInput" rows="2" placeholder="e.g., Black takes corner territory, White gets outside wall..." class="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400"></textarea>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button type="button" id="btnCancelSaveJosekiModal" class="px-3.5 py-2 rounded-lg text-xs font-medium border border-stone-200 text-stone-700 hover:bg-stone-50 transition">
+          Cancel
+        </button>
+        <button type="button" id="btnConfirmSaveJoseki" class="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+          Save Joseki
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     (() => {
       // DOM Elements — Board
@@ -354,15 +533,35 @@
       // Active Study Baseline Banner
       const activeStudyBar = document.getElementById('activeStudyBar');
       const activeStudyTitle = document.getElementById('activeStudyTitle');
+      const activeDifficultyBadge = document.getElementById('activeDifficultyBadge');
       const activeStudySub = document.getElementById('activeStudySub');
+      const solutionPickerGroup = document.getElementById('solutionPickerGroup');
+      const solutionSelect = document.getElementById('solutionSelect');
+      const btnSaveQuestionSolution = document.getElementById('btnSaveQuestionSolution');
+      const btnSaveWrongSolution = document.getElementById('btnSaveWrongSolution');
+      const btnShowQuestionSolution = document.getElementById('btnShowQuestionSolution');
+      const btnDeleteSelectedSolution = document.getElementById('btnDeleteSelectedSolution');
       const btnResetBaseline = document.getElementById('btnResetBaseline');
       const btnExitStudy = document.getElementById('btnExitStudy');
+      const moveCommentBar = document.getElementById('moveCommentBar');
+      const moveCommentLabel = document.getElementById('moveCommentLabel');
+      const moveCommentInput = document.getElementById('moveCommentInput');
+      const btnSaveMoveComment = document.getElementById('btnSaveMoveComment');
 
       // Module containers
       const moduleBoard = document.getElementById('moduleBoard');
       const moduleShapes = document.getElementById('moduleShapes');
       const moduleDatabase = document.getElementById('moduleDatabase');
+      const moduleJoseki = document.getElementById('moduleJoseki');
       const dbCountBadge = document.getElementById('dbCountBadge');
+      const josekiCountBadge = document.getElementById('josekiCountBadge');
+
+      const josekiReplayControls = document.getElementById('josekiReplayControls');
+      const btnJosekiFirst = document.getElementById('btnJosekiFirst');
+      const btnJosekiPrev = document.getElementById('btnJosekiPrev');
+      const josekiStepLabel = document.getElementById('josekiStepLabel');
+      const btnJosekiNext = document.getElementById('btnJosekiNext');
+      const btnJosekiLast = document.getElementById('btnJosekiLast');
 
       // Module 2: Go Shapes
       const shapeSelect = document.getElementById('shapeSelect');
@@ -378,10 +577,35 @@
       const btnConfirmSaveQuestion = document.getElementById('btnConfirmSaveQuestion');
       const qTitleInput = document.getElementById('qTitleInput');
       const qFolderSelect = document.getElementById('qFolderSelect');
+      const qDifficultySelect = document.getElementById('qDifficultySelect');
       const qFirstTurnSelect = document.getElementById('qFirstTurnSelect');
       const qNewFolderModalInput = document.getElementById('qNewFolderModalInput');
       const btnAddFolderInModal = document.getElementById('btnAddFolderInModal');
       const qNotesInput = document.getElementById('qNotesInput');
+
+      const btnOpenSaveJosekiModal = document.getElementById('btnOpenSaveJosekiModal');
+      const saveJosekiModal = document.getElementById('saveJosekiModal');
+      const btnCloseSaveJosekiModal = document.getElementById('btnCloseSaveJosekiModal');
+      const btnCancelSaveJosekiModal = document.getElementById('btnCancelSaveJosekiModal');
+      const btnConfirmSaveJoseki = document.getElementById('btnConfirmSaveJoseki');
+      const josekiMoveCountPreview = document.getElementById('josekiMoveCountPreview');
+      const jTitleInput = document.getElementById('jTitleInput');
+      const jFolderSelect = document.getElementById('jFolderSelect');
+      const jNewFolderModalInput = document.getElementById('jNewFolderModalInput');
+      const btnAddJosekiFolderInModal = document.getElementById('btnAddJosekiFolderInModal');
+      const jNotesInput = document.getElementById('jNotesInput');
+
+      const newJosekiFolderInput = document.getElementById('newJosekiFolderInput');
+      const btnCreateJosekiFolder = document.getElementById('btnCreateJosekiFolder');
+      const josekiFolderListEl = document.getElementById('josekiFolderList');
+      const josekiFolderTotalCountEl = document.getElementById('josekiFolderTotalCount');
+      const currentJosekiFolderHeading = document.getElementById('currentJosekiFolderHeading');
+      const currentJosekiFolderSubCount = document.getElementById('currentJosekiFolderSubCount');
+      const btnDeleteCurrentJosekiFolder = document.getElementById('btnDeleteCurrentJosekiFolder');
+      const josekiGrid = document.getElementById('josekiGrid');
+      const btnGoToBoardFromJoseki = document.getElementById('btnGoToBoardFromJoseki');
+      const btnExportJoseki = document.getElementById('btnExportJoseki');
+      const inputImportJoseki = document.getElementById('inputImportJoseki');
 
       const newFolderInput = document.getElementById('newFolderInput');
       const btnCreateFolder = document.getElementById('btnCreateFolder');
@@ -408,40 +632,136 @@
 
       let board = [];
       let moveNums = [];
+      let moveSequence = []; // Ordered list of { x, y, color }
       let labels = {};
       let lastMove = null;
       let blackCaptured = 0;
       let whiteCaptured = 0;
       let moveCounter = 0;
+      let activeJosekiReplay = null; // { item, step }
+      let activeTargetType = null; // 'question' | 'shape' | 'joseki' | null
+      let activeQuestionId = null; // ID of currently loaded question or shape key
+      let activeSolutionIndex = 0; // Index in solutions[]
+      let activeSolutionReplay = null; // { targetType, id, solIndex, step }
 
       let history = [];
       let redoStack = [];
       let hoverPos = null;
       let audioCtx = null;
-      let studyBaseline = null; // Stores starting snapshot when studying a shape or saved question
+      let studyBaseline = null;
 
       let canvasSize = 560;
       let margin = 28;
       let cell = 28;
 
-      // Database state (Starts empty as requested, persisted in localStorage)
       const STORAGE_QUESTIONS_KEY = 'go_study_questions_v1';
       const STORAGE_FOLDERS_KEY = 'go_study_folders_v1';
+      const STORAGE_JOSEKI_KEY = 'go_study_joseki_v1';
+      const STORAGE_JOSEKI_FOLDERS_KEY = 'go_study_joseki_folders_v1';
+      const STORAGE_SHAPE_SOLUTIONS_KEY = 'go_study_shape_solutions_v1';
       let folders = [];
       let questions = [];
-      let selectedFolderFilter = '__ALL__'; // '__ALL__' | '__UNCATEGORIZED__' | folderName
+      let selectedFolderFilter = '__ALL__';
+      let selectedDifficultyFilter = '__ALL__';
+      let josekiFolders = [];
+      let josekiList = [];
+      let selectedJosekiFolderFilter = '__ALL__';
+      let shapeSolutionsMap = {}; // shapeKey -> [ { name: 'sol1', moves: [ {x,y,color,comment} ] } ]
+
+      const INITIAL_SEED_QUESTIONS = [
+        {
+          id: "q_1794583994984_yk25",
+          title: "Retangular six with one corner missing",
+          folder: "Basic dead-or-alive",
+          difficulty: "Easy",
+          firstTurn: 1,
+          notes: "Black at D3 removes one corner of White's 2x3 eye space (E6-F4).",
+          boardSize: 9,
+          board: [
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,1,1,1,0,0],
+            [0,0,1,2,2,2,2,1,0],
+            [0,0,1,2,0,0,2,1,0],
+            [0,0,1,2,0,0,2,1,0],
+            [0,0,1,2,0,0,2,1,0],
+            [0,0,1,1,2,2,2,1,0],
+            [0,0,0,0,1,1,1,0,0],
+            [0,0,0,0,0,0,0,0,0]
+          ],
+          labels: { "4,4": "A", "5,4": "B", "4,5": "C" },
+          solutions: [],
+          createdAt: "13/11/2026"
+        }
+      ];
+
+      function relabelSolutionsList(sols) {
+        let cCount = 0;
+        let wCount = 0;
+        sols.forEach(s => {
+          const isWrong = s.type === 'wrong';
+          s.type = isWrong ? 'wrong' : 'correct';
+          if (isWrong) {
+            wCount += 1;
+            s.name = `wrong${wCount}`;
+          } else {
+            cCount += 1;
+            s.name = `sol${cCount}`;
+          }
+        });
+        return sols;
+      }
+
+      function normalizeQuestionSolutions(q) {
+        if (!Array.isArray(q.solutions)) {
+          if (Array.isArray(q.solution) && q.solution.length > 0) {
+            q.solutions = [{ name: 'sol1', type: 'correct', moves: q.solution.map(m => ({ ...m, comment: m.comment || '' })) }];
+          } else {
+            q.solutions = [];
+          }
+        } else {
+          q.solutions = q.solutions.map((s, idx) => ({
+            name: s.name || `sol${idx + 1}`,
+            type: s.type === 'wrong' ? 'wrong' : 'correct',
+            moves: Array.isArray(s.moves) ? s.moves.map(m => ({ ...m, comment: m.comment || '' })) : []
+          }));
+          relabelSolutionsList(q.solutions);
+        }
+        delete q.solution;
+        if (!q.difficulty) q.difficulty = 'Medium';
+        return q;
+      }
 
       function loadDatabaseFromStorage() {
         try {
           const rawF = localStorage.getItem(STORAGE_FOLDERS_KEY);
           const rawQ = localStorage.getItem(STORAGE_QUESTIONS_KEY);
-          folders = rawF ? JSON.parse(rawF) : [];
-          questions = rawQ ? JSON.parse(rawQ) : [];
-          if (!Array.isArray(folders)) folders = [];
-          if (!Array.isArray(questions)) questions = [];
+          folders = rawF ? JSON.parse(rawF) : ["Basic dead-or-alive"];
+          questions = rawQ ? JSON.parse(rawQ) : [...INITIAL_SEED_QUESTIONS];
+          if (!Array.isArray(folders) || folders.length === 0) folders = ["Basic dead-or-alive"];
+          if (!Array.isArray(questions) || questions.length === 0) questions = [...INITIAL_SEED_QUESTIONS];
+          questions = questions.map(normalizeQuestionSolutions);
+
+          const rawJF = localStorage.getItem(STORAGE_JOSEKI_FOLDERS_KEY);
+          const rawJL = localStorage.getItem(STORAGE_JOSEKI_KEY);
+          josekiFolders = rawJF ? JSON.parse(rawJF) : [];
+          josekiList = rawJL ? JSON.parse(rawJL) : [];
+          if (!Array.isArray(josekiFolders)) josekiFolders = [];
+          if (!Array.isArray(josekiList)) josekiList = [];
+          josekiList.forEach(j => {
+            if (Array.isArray(j.moves)) {
+              j.moves = j.moves.map(m => ({ ...m, comment: m.comment || '' }));
+            }
+          });
+
+          const rawSS = localStorage.getItem(STORAGE_SHAPE_SOLUTIONS_KEY);
+          shapeSolutionsMap = rawSS ? JSON.parse(rawSS) : {};
+          if (!shapeSolutionsMap || typeof shapeSolutionsMap !== 'object') shapeSolutionsMap = {};
         } catch (_) {
-          folders = [];
-          questions = [];
+          folders = ["Basic dead-or-alive"];
+          questions = INITIAL_SEED_QUESTIONS.map(normalizeQuestionSolutions);
+          josekiFolders = [];
+          josekiList = [];
+          shapeSolutionsMap = {};
         }
       }
 
@@ -449,6 +769,9 @@
         try {
           localStorage.setItem(STORAGE_FOLDERS_KEY, JSON.stringify(folders));
           localStorage.setItem(STORAGE_QUESTIONS_KEY, JSON.stringify(questions));
+          localStorage.setItem(STORAGE_JOSEKI_FOLDERS_KEY, JSON.stringify(josekiFolders));
+          localStorage.setItem(STORAGE_JOSEKI_KEY, JSON.stringify(josekiList));
+          localStorage.setItem(STORAGE_SHAPE_SOLUTIONS_KEY, JSON.stringify(shapeSolutionsMap));
         } catch (_) {}
       }
 
@@ -466,6 +789,9 @@
         moduleDatabase.classList.toggle('hidden', tabName !== 'database');
         moduleDatabase.classList.toggle('flex', tabName === 'database');
 
+        moduleJoseki.classList.toggle('hidden', tabName !== 'joseki');
+        moduleJoseki.classList.toggle('flex', tabName === 'joseki');
+
         if (tabName === 'board') {
           resizeCanvas();
           draw();
@@ -473,6 +799,9 @@
           renderShapesCatalog();
         } else if (tabName === 'database') {
           renderDatabase();
+        renderJosekiLibrary();
+        } else if (tabName === 'joseki') {
+          renderJosekiLibrary();
         }
       }
 
@@ -526,6 +855,7 @@
         syncSizeButtons(boardSize);
         board = createEmptyBoard(boardSize);
         moveNums = createEmptyBoard(boardSize);
+        moveSequence = [];
         labels = {};
         lastMove = null;
         nextColor = 1;
@@ -537,6 +867,17 @@
         hoverPos = null;
         if (clearBaseline) {
           studyBaseline = null;
+          activeTargetType = null;
+          activeJosekiReplay = null;
+          activeQuestionId = null;
+          activeSolutionReplay = null;
+          josekiReplayControls.classList.add('hidden');
+          josekiReplayControls.classList.remove('flex');
+          solutionPickerGroup.classList.add('hidden');
+          solutionPickerGroup.classList.remove('flex');
+          btnSaveQuestionSolution.classList.add('hidden');
+          btnSaveWrongSolution.classList.add('hidden');
+          moveCommentBar.classList.add('hidden');
           activeStudyBar.classList.add('hidden');
         }
         resizeCanvas();
@@ -549,6 +890,7 @@
           boardSize,
           board: board.map(r => [...r]),
           moveNums: moveNums.map(r => [...r]),
+          moveSequence: moveSequence.map(m => ({ ...m })),
           labels: { ...labels },
           lastMove: lastMove ? { ...lastMove } : null,
           nextColor,
@@ -566,6 +908,7 @@
         }
         board = s.board.map(r => [...r]);
         moveNums = s.moveNums ? s.moveNums.map(r => [...r]) : createEmptyBoard(boardSize);
+        moveSequence = s.moveSequence ? s.moveSequence.map(m => ({ ...m })) : [];
         labels = { ...(s.labels || {}) };
         lastMove = s.lastMove ? { ...s.lastMove } : null;
         nextColor = s.nextColor || 1;
@@ -653,6 +996,7 @@
 
         moveCounter += 1;
         moveNums[y][x] = moveCounter;
+        moveSequence.push({ x, y, color, comment: '' });
         lastMove = { x, y };
 
         if (mode === 'alternate') {
@@ -660,6 +1004,7 @@
         }
         playStoneSound();
         showStatus(`Placed ${color === 1 ? 'Black' : 'White'} at ${COLS[x]}${boardSize - y}.`);
+        syncMoveCommentUI();
         updateUI();
         draw();
         return true;
@@ -747,6 +1092,7 @@
         whiteCapsEl.textContent = whiteCaptured;
         moveCountEl.textContent = moveCounter;
         dbCountBadge.textContent = String(questions.length);
+        josekiCountBadge.textContent = String(josekiList.length);
 
         btnUndo.disabled = history.length === 0;
         btnRedo.disabled = redoStack.length === 0;
@@ -986,6 +1332,7 @@
         if (history.length === 0) return;
         redoStack.push(cloneState());
         restoreState(history.pop());
+        syncMoveCommentUI();
         showStatus('Undid last action.');
       });
 
@@ -993,6 +1340,7 @@
         if (redoStack.length === 0) return;
         history.push(cloneState());
         restoreState(redoStack.pop());
+        syncMoveCommentUI();
         showStatus('Redid action.');
       });
 
@@ -1025,6 +1373,7 @@
         pushHistory();
         board = createEmptyBoard(boardSize);
         moveNums = createEmptyBoard(boardSize);
+        moveSequence = [];
         labels = {};
         lastMove = null;
         nextColor = 1;
@@ -1032,6 +1381,17 @@
         whiteCaptured = 0;
         moveCounter = 0;
         studyBaseline = null;
+        activeTargetType = null;
+        activeJosekiReplay = null;
+        activeQuestionId = null;
+        activeSolutionReplay = null;
+        josekiReplayControls.classList.add('hidden');
+        josekiReplayControls.classList.remove('flex');
+        solutionPickerGroup.classList.add('hidden');
+        solutionPickerGroup.classList.remove('flex');
+        btnSaveQuestionSolution.classList.add('hidden');
+          btnSaveWrongSolution.classList.add('hidden');
+        moveCommentBar.classList.add('hidden');
         activeStudyBar.classList.add('hidden');
         updateUI();
         draw();
@@ -1042,12 +1402,22 @@
         if (!studyBaseline) return;
         pushHistory();
         restoreState(studyBaseline.snapshot);
+        activeSolutionReplay = null;
+        if (activeTargetType !== 'joseki') {
+          josekiReplayControls.classList.add('hidden');
+          josekiReplayControls.classList.remove('flex');
+        }
         setMode('alternate');
+        syncMoveCommentUI();
         showStatus(`Reset to starting position: ${studyBaseline.title}`);
       });
 
       btnExitStudy.addEventListener('click', () => {
         studyBaseline = null;
+        activeTargetType = null;
+        activeQuestionId = null;
+        activeJosekiReplay = null;
+        activeSolutionReplay = null;
         activeStudyBar.classList.add('hidden');
       });
 
@@ -1056,29 +1426,27 @@
       // ==========================================
       function buildSealedShape(eyeCells) {
         const eyeSet = new Set(eyeCells.map(([x, y]) => `${x},${y}`));
-        const whiteSet = new Set(); // wall enclosing the eye  → rendered White
-        const blackSet = new Set(); // outer ring               → rendered Black
-        const dirs  = [[1,0],[-1,0],[0,1],[0,-1]];
+        const blackSet = new Set();
+        const whiteSet = new Set();
+        const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
         const dirs8 = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
 
-        // 1) White wall: every point adjacent (8-way) to an eye point
         for (const [ex, ey] of eyeCells) {
           for (const [dx, dy] of dirs8) {
             const nx = ex + dx, ny = ey + dy;
             if (nx >= 0 && ny >= 0 && !eyeSet.has(`${nx},${ny}`)) {
-              whiteSet.add(`${nx},${ny}`);
+              blackSet.add(`${nx},${ny}`);
             }
           }
         }
 
-        // 2) Black outer: every point adjacent (4-way) to the White wall
-        for (const wKey of whiteSet) {            // ← iterate WHITE (it is populated)
-          const [wx, wy] = wKey.split(',').map(Number);
+        for (const bKey of blackSet) {
+          const [bx, by] = bKey.split(',').map(Number);
           for (const [dx, dy] of dirs) {
-            const nx = wx + dx, ny = wy + dy;
+            const nx = bx + dx, ny = by + dy;
             const k = `${nx},${ny}`;
-            if (nx >= 0 && ny >= 0 && !eyeSet.has(k) && !whiteSet.has(k)) {
-              blackSet.add(k);                      // ← outer stones go into BLACK
+            if (nx >= 0 && ny >= 0 && !eyeSet.has(k) && !blackSet.has(k)) {
+              whiteSet.add(k);
             }
           }
         }
@@ -1095,7 +1463,7 @@
           vital: [3, 2],
           vitalLabel: 'D7',
           eye: [[2,2],[3,2],[4,2]],
-          hint: '直三 (Straight Three): Whoever plays D7 (center) wins.'
+          hint: '直三 (Straight Three): White defends, Black attacks — whoever plays D7 wins.'
         },
         bent3: {
           name: '曲三 · Bent Three',
@@ -1104,7 +1472,7 @@
           vital: [2, 2],
           vitalLabel: 'C7',
           eye: [[2,2],[3,2],[2,3]],
-          hint: '曲三 (Bent Three): Whoever plays C7 (corner of the bend) wins.'
+          hint: '曲三 (Bent Three): White defends, Black attacks — whoever plays C7 wins.'
         },
         straight4: {
           name: '直四 · Straight Four',
@@ -1113,7 +1481,7 @@
           vital: [3, 2],
           vitalLabel: 'D7 / E7 (Miai)',
           eye: [[2,2],[3,2],[4,2],[5,2]],
-          hint: '直四 (Straight Four): Always alive — D7 and E7 are miai.'
+          hint: '直四 (Straight Four): White is always alive — D7 and E7 are miai.'
         },
         bent4: {
           name: '曲四 · Bent Four (Open)',
@@ -1122,7 +1490,7 @@
           vital: [2, 2],
           vitalLabel: 'C7 / D7 (Miai)',
           eye: [[2,2],[3,2],[4,2],[2,3]],
-          hint: '曲四 (Bent Four Open): Always alive — C7 and D7 are miai.'
+          hint: '曲四 (Bent Four Open): White is always alive — C7 and D7 are miai.'
         },
         corner_bent4: {
           name: '盤角曲四 · Bent Four in Corner',
@@ -1140,7 +1508,7 @@
           vital: null,
           vitalLabel: 'None (Dead)',
           eye: [[2,2],[3,2],[2,3],[3,3]],
-          hint: '方四 (Square Four): Always dead regardless of who moves first.'
+          hint: '方四 (Square Four): White is always dead regardless of who moves first.'
         },
         pyramid4: {
           name: '丁四 · Pyramid Four',
@@ -1149,7 +1517,7 @@
           vital: [3, 2],
           vitalLabel: 'D7 (T-Junction)',
           eye: [[3,1],[2,2],[3,2],[4,2]],
-          hint: '丁四 (Pyramid Four): Whoever plays D7 (T-junction) wins.'
+          hint: '丁四 (Pyramid Four): White defends, Black attacks — whoever plays D7 wins.'
         },
         bulky5: {
           name: '刀把五 · Bulky Five',
@@ -1158,7 +1526,7 @@
           vital: [3, 2],
           vitalLabel: 'D7 (Junction)',
           eye: [[2,1],[3,1],[2,2],[3,2],[4,2]],
-          hint: '刀把五 (Bulky Five): Whoever plays D7 (junction) wins.'
+          hint: '刀把五 (Bulky Five): White defends, Black attacks — whoever plays D7 wins.'
         },
         flower5: {
           name: '梅花五 · Crossed Five',
@@ -1167,7 +1535,7 @@
           vital: [3, 2],
           vitalLabel: 'D7 (Center)',
           eye: [[3,1],[2,2],[3,2],[4,2],[3,3]],
-          hint: '梅花五 (Crossed Five): Whoever plays D7 (center) wins.'
+          hint: '梅花五 (Crossed Five): White defends, Black attacks — whoever plays D7 wins.'
         },
         rabbity6: {
           name: '葡萄六 · Rabbity Six',
@@ -1176,7 +1544,7 @@
           vital: [3, 2],
           vitalLabel: 'D7 (Nexus)',
           eye: [[2,1],[3,1],[2,2],[3,2],[4,2],[3,3]],
-          hint: '葡萄六 (Rabbity Six): Whoever plays D7 (central nexus) wins.'
+          hint: '葡萄六 (Rabbity Six): White defends, Black attacks — whoever plays D7 wins.'
         },
         rect6: {
           name: '板六 · Rectangular Six (Open)',
@@ -1185,7 +1553,7 @@
           vital: [3, 2],
           vitalLabel: 'D7 / D6 (Miai)',
           eye: [[2,2],[3,2],[4,2],[2,3],[3,3],[4,3]],
-          hint: '板六 (Rectangular Six Open): Always alive — D7 and D6 are miai.'
+          hint: '板六 (Rectangular Six Open): White is always alive — D7 and D6 are miai.'
         },
         corner_rect6: {
           name: '角部板六 · Corner Rectangular Six',
@@ -1194,7 +1562,7 @@
           vital: [1, 1],
           vitalLabel: 'B8 (2-2 Point)',
           eye: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]],
-          hint: '角部板六 (Corner Rect Six): 0 outside liberties — Black B8 kills.'
+          hint: '角部板六 (Corner Rect Six): 0 outside liberties — Black B8 kills White.'
         }
       };
 
@@ -1230,7 +1598,23 @@
           out += `<circle cx="${vx}" cy="${vy}" r="${(r * 0.72).toFixed(1)}" fill="#2563eb" stroke="#ffffff" stroke-width="1"/>`;
         }
 
+        if (Array.isArray(labelsMap.__moveNums)) {
+          for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+              const n = labelsMap.__moveNums[y] ? labelsMap.__moveNums[y][x] : 0;
+              if (n > 0 && boardArr[y] && boardArr[y][x] !== 0) {
+                const cx = (pad + x * step).toFixed(1);
+                const cy = (pad + y * step + 2.5).toFixed(1);
+                const col = boardArr[y][x] === 1 ? '#ffffff' : '#1f2937';
+                const fsz = Math.max(5.5, r * 0.95).toFixed(1);
+                out += `<text x="${cx}" y="${cy}" font-size="${fsz}" font-weight="600" text-anchor="middle" fill="${col}">${n}</text>`;
+              }
+            }
+          }
+        }
+
         for (const [k, ch] of Object.entries(labelsMap || {})) {
+          if (k === '__moveNums') continue;
           const [lx, ly] = k.split(',').map(Number);
           if (lx < size && ly < size) {
             const cx = (pad + lx * step).toFixed(1);
@@ -1245,13 +1629,126 @@
         return out;
       }
 
+      function getDifficultyBadgeInfo(diff) {
+        if (diff === 'Easy') return { label: 'Easy (DDK)', cls: 'bg-emerald-100 text-emerald-900 border-emerald-200' };
+        if (diff === 'Hard') return { label: 'Hard (Dan)', cls: 'bg-rose-100 text-rose-900 border-rose-200' };
+        return { label: 'Medium (SDK)', cls: 'bg-amber-100 text-amber-900 border-amber-200' };
+      }
+
+      function getTargetSolutionsArray(targetType, id) {
+        if (targetType === 'shape') {
+          if (!Array.isArray(shapeSolutionsMap[id])) shapeSolutionsMap[id] = [];
+          return shapeSolutionsMap[id];
+        }
+        const q = questions.find(item => item.id === id);
+        if (!q) return [];
+        if (!Array.isArray(q.solutions)) q.solutions = [];
+        return q.solutions;
+      }
+
+      function syncSolutionPickerUI() {
+        if (activeTargetType !== 'question' && activeTargetType !== 'shape') {
+          solutionPickerGroup.classList.add('hidden');
+          solutionPickerGroup.classList.remove('flex');
+          return;
+        }
+        const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
+        if (sols.length === 0) {
+          solutionPickerGroup.classList.add('hidden');
+          solutionPickerGroup.classList.remove('flex');
+          return;
+        }
+        if (activeSolutionIndex >= sols.length) activeSolutionIndex = sols.length - 1;
+        if (activeSolutionIndex < 0) activeSolutionIndex = 0;
+
+        solutionSelect.innerHTML = sols.map((s, idx) => {
+          const name = s.name || (s.type === 'wrong' ? `wrong${idx + 1}` : `sol${idx + 1}`);
+          const tag = s.type === 'wrong' ? '✗ Wrong' : '✓ Correct';
+          return `<option value="${idx}" ${idx === activeSolutionIndex ? 'selected' : ''}>${name} (${tag})</option>`;
+        }).join('');
+
+        solutionPickerGroup.classList.remove('hidden');
+        solutionPickerGroup.classList.add('flex');
+      }
+
+      function syncMoveCommentUI() {
+        // Show move comment bar whenever at least 1 ordered move is on the board (or during solution/joseki replay)
+        if (moveSequence.length === 0) {
+          moveCommentBar.classList.add('hidden');
+          return;
+        }
+        const stepIdx = moveSequence.length - 1;
+        const mv = moveSequence[stepIdx];
+        const coord = `${COLS[mv.x]}${boardSize - mv.y}`;
+        const colorName = mv.color === 1 ? 'Black' : 'White';
+        moveCommentLabel.textContent = `Move #${stepIdx + 1} (${colorName} ${coord}) Remark:`;
+        moveCommentInput.value = mv.comment || '';
+        moveCommentBar.classList.remove('hidden');
+      }
+
+      btnSaveMoveComment.addEventListener('click', () => {
+        if (moveSequence.length === 0) return;
+        const stepIdx = moveSequence.length - 1;
+        const remark = moveCommentInput.value.trim();
+        moveSequence[stepIdx].comment = remark;
+
+        // Also persist directly if we are replaying a saved Question/Shape solution or Joseki
+        if (activeJosekiReplay && activeJosekiReplay.item && activeJosekiReplay.item.moves[stepIdx]) {
+          activeJosekiReplay.item.moves[stepIdx].comment = remark;
+          saveDatabaseToStorage();
+          renderJosekiLibrary();
+        } else if (activeSolutionReplay) {
+          const sols = getTargetSolutionsArray(activeSolutionReplay.targetType, activeSolutionReplay.id);
+          const solObj = sols[activeSolutionReplay.solIndex];
+          if (solObj && solObj.moves && solObj.moves[stepIdx]) {
+            solObj.moves[stepIdx].comment = remark;
+            saveDatabaseToStorage();
+            renderShapesCatalog();
+            renderDatabase();
+          }
+        }
+        showStatus(remark ? `Saved remark for Move #${stepIdx + 1}: "${remark}"` : `Cleared remark for Move #${stepIdx + 1}.`);
+      });
+
+      moveCommentInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          btnSaveMoveComment.click();
+        }
+      });
+
       function renderShapesCatalog() {
         shapesCatalogGrid.innerHTML = Object.entries(SHAPE_PRESETS).map(([key, item]) => {
-          const { black, white } = buildSealedShape(item.eye);
+          const { black: defenderWall, white: attackerRing } = buildSealedShape(item.eye);
           const tempB = createEmptyBoard(9);
-          for (const [bx, by] of black) if (bx < 9 && by < 9) tempB[by][bx] = 1;
-          for (const [wx, wy] of white) if (wx < 9 && wy < 9) tempB[wy][wx] = 2;
+          for (const [dx, dy] of defenderWall) if (dx < 9 && dy < 9) tempB[dy][dx] = 2; // White defends
+          for (const [ax, ay] of attackerRing) if (ax < 9 && ay < 9) tempB[ay][ax] = 1; // Black attacks
           const svgThumb = renderMiniBoardSvg(tempB, 9, {}, item.vital);
+          const sols = getTargetSolutionsArray('shape', key);
+
+          const solButtonsHtml = sols.length > 0
+            ? `<div class="flex flex-wrap items-center gap-1 pt-1">
+                ${sols.map((s, idx) => {
+                  const isW = s.type === 'wrong';
+                  const wrapCls = isW
+                    ? 'bg-rose-50 border-rose-200 text-rose-800'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-800';
+                  const btnHover = isW ? 'hover:bg-rose-100' : 'hover:bg-emerald-100';
+                  const delCls = isW
+                    ? 'text-rose-600 hover:text-red-700 hover:bg-red-100 border-rose-200'
+                    : 'text-emerald-600 hover:text-red-600 hover:bg-red-50 border-emerald-200';
+                  return `
+                  <div class="inline-flex items-center rounded-md border text-[11px] font-medium ${wrapCls}">
+                    <button type="button" data-shape-sol="${key}" data-sol-idx="${idx}" class="px-2 py-0.5 ${btnHover} rounded-l-md transition">
+                      ${s.name || (isW ? 'wrong' : 'sol')}
+                    </button>
+                    <button type="button" data-del-shape-sol="${key}" data-sol-idx="${idx}" title="Delete this variation" class="px-1.5 py-0.5 ${delCls} rounded-r-md border-l transition">
+                      ✕
+                    </button>
+                  </div>`;
+                }).join('')}
+              </div>`
+            : `<div class="text-[11px] text-stone-400">No saved solutions yet — load shape to record Correct or Wrong variations</div>`;
 
           return `
             <div class="bg-white rounded-xl p-4 shadow-sm border border-stone-200 flex flex-col justify-between gap-3 hover:border-stone-400 transition">
@@ -1267,6 +1764,7 @@
                     <p class="leading-relaxed text-stone-500">${item.hint}</p>
                   </div>
                 </div>
+                ${solButtonsHtml}
               </div>
               <button type="button" data-load-shape="${key}" class="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
                 Practice Shape on Board &rarr;
@@ -1279,30 +1777,79 @@
           btn.addEventListener('click', () => {
             const k = btn.getAttribute('data-load-shape');
             shapeSelect.value = k;
-            loadPresetShape(k, true);
+            loadPresetShape(k, true, false, 0);
+          });
+        });
+
+        shapesCatalogGrid.querySelectorAll('[data-shape-sol]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const k = btn.getAttribute('data-shape-sol');
+            const idx = parseInt(btn.getAttribute('data-sol-idx'), 10) || 0;
+            shapeSelect.value = k;
+            loadPresetShape(k, true, true, idx);
+          });
+        });
+
+        shapesCatalogGrid.querySelectorAll('[data-del-shape-sol]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const k = btn.getAttribute('data-del-shape-sol');
+            const idx = parseInt(btn.getAttribute('data-sol-idx'), 10);
+            const sols = getTargetSolutionsArray('shape', k);
+            if (idx >= 0 && idx < sols.length) {
+              sols.splice(idx, 1);
+              relabelSolutionsList(sols);
+              saveDatabaseToStorage();
+              if (activeTargetType === 'shape' && activeQuestionId === k) {
+                syncSolutionPickerUI();
+              }
+              renderShapesCatalog();
+            }
           });
         });
       }
 
-      function loadPresetShape(key, switchToBoard = true) {
+      function loadPresetShape(key, switchToBoard = true, replaySol = false, solIdx = 0) {
         const preset = SHAPE_PRESETS[key];
         if (!preset) return;
-        const { black, white } = buildSealedShape(preset.eye);
+        const { black: defenderWall, white: attackerRing } = buildSealedShape(preset.eye);
 
         resetState(9, false);
-        for (const [bx, by] of black) if (bx < 9 && by < 9) board[by][bx] = 1;
-        for (const [wx, wy] of white) if (wx < 9 && wy < 9) board[wy][wx] = 2;
+        for (const [dx, dy] of defenderWall) if (dx < 9 && dy < 9) board[dy][dx] = 2; // White defends
+        for (const [ax, ay] of attackerRing) if (ax < 9 && ay < 9) board[ay][ax] = 1; // Black attacks
 
         setMode('alternate');
-        nextColor = 1;
+        nextColor = 1; // Black attacks first
+        showNumbers = true;
+
+        activeTargetType = 'shape';
+        activeQuestionId = key;
+        activeSolutionIndex = solIdx;
+        activeJosekiReplay = null;
+        activeSolutionReplay = null;
+
         studyBaseline = {
           title: preset.name,
           subtitle: `Vital Point: ${preset.vitalLabel}`,
           snapshot: cloneState()
         };
         activeStudyTitle.textContent = `Shape: ${preset.name}`;
+        activeDifficultyBadge.classList.add('hidden');
         activeStudySub.textContent = `(${preset.hint})`;
         activeStudyBar.classList.remove('hidden');
+
+        btnSaveQuestionSolution.classList.remove('hidden');
+        btnSaveWrongSolution.classList.remove('hidden');
+        josekiReplayControls.classList.add('hidden');
+        josekiReplayControls.classList.remove('flex');
+        syncSolutionPickerUI();
+        syncMoveCommentUI();
+
+        if (replaySol) {
+          const sols = getTargetSolutionsArray('shape', key);
+          if (sols[solIdx]) {
+            applyTargetSolutionStep('shape', key, solIdx, sols[solIdx].moves.length);
+          }
+        }
 
         shapeHintEl.textContent = preset.hint;
         showStatus(preset.hint);
@@ -1311,11 +1858,11 @@
         draw();
       }
 
-      btnLoadShape.addEventListener('click', () => loadPresetShape(shapeSelect.value, true));
-      shapeSelect.addEventListener('change', () => loadPresetShape(shapeSelect.value, false));
+      btnLoadShape.addEventListener('click', () => loadPresetShape(shapeSelect.value, true, false, 0));
+      shapeSelect.addEventListener('change', () => loadPresetShape(shapeSelect.value, false, false, 0));
 
       // ==========================================
-      // MODULE 3: QUESTION DATABASE & FOLDERS
+      // MODULE 3: QUESTION DATABASE, DIFFICULTY TAGS & MULTI-SOLUTIONS
       // ==========================================
       function populateFolderSelectModal() {
         let html = `<option value="">Uncategorized</option>`;
@@ -1330,6 +1877,7 @@
       function openSaveQuestionModal() {
         populateFolderSelectModal();
         qTitleInput.value = `Question #${questions.length + 1}`;
+        qDifficultySelect.value = 'Medium';
         qFirstTurnSelect.value = String(nextColor);
         qNewFolderModalInput.value = '';
         qNotesInput.value = '';
@@ -1366,6 +1914,7 @@
           if (!folders.includes(pendingNewFolder)) folders.push(pendingNewFolder);
           folder = pendingNewFolder;
         }
+        const difficulty = qDifficultySelect.value || 'Medium';
         const firstTurn = parseInt(qFirstTurnSelect.value, 10) || 1;
         const notes = qNotesInput.value.trim();
 
@@ -1373,19 +1922,21 @@
           id: 'q_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
           title,
           folder,
+          difficulty,
           firstTurn,
           notes,
           boardSize,
           board: board.map(r => [...r]),
           labels: { ...labels },
+          solutions: [],
           createdAt: new Date().toLocaleDateString()
         };
 
         questions.unshift(newQuestion);
         saveDatabaseToStorage();
         closeSaveQuestionModal();
-        updateUI();
-        showStatus(`Saved "${title}" into ${folder ? `folder "${folder}"` : 'Question Database'}.`);
+        loadQuestionToBoard(newQuestion.id, false, false, 0);
+        showStatus(`Saved "${title}" [${difficulty}]. Play moves (1, 2, 3...) and click "+ Save as New Sol" to add sol1!`);
       });
 
       function createNewFolderFromSidebar() {
@@ -1417,12 +1968,21 @@
         renderDatabase();
       });
 
+      document.querySelectorAll('.diff-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.diff-filter-btn').forEach(b => b.classList.remove('btn-active'));
+          btn.classList.add('btn-active');
+          selectedDifficultyFilter = btn.getAttribute('data-diff-filter');
+          renderDatabase();
+        });
+      });
+
       btnGoToBoardFromDb.addEventListener('click', () => {
         switchTab('board');
       });
 
       btnExportDb.addEventListener('click', () => {
-        const payload = JSON.stringify({ folders, questions }, null, 2);
+        const payload = JSON.stringify({ folders, questions, shapeSolutionsMap }, null, 2);
         const blob = new Blob([payload], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1447,25 +2007,135 @@
               });
             }
             if (Array.isArray(parsed.questions)) {
-              questions = [...parsed.questions, ...questions];
+              const imported = parsed.questions.map(normalizeQuestionSolutions);
+              questions = [...imported, ...questions];
+            }
+            if (parsed.shapeSolutionsMap && typeof parsed.shapeSolutionsMap === 'object') {
+              shapeSolutionsMap = { ...shapeSolutionsMap, ...parsed.shapeSolutionsMap };
             }
             saveDatabaseToStorage();
             updateUI();
             renderDatabase();
+            renderShapesCatalog();
           } catch (_) {}
         };
         reader.readAsText(file);
         inputImportDb.value = '';
       });
 
-      function loadQuestionToBoard(qId) {
+      function applyTargetSolutionStep(targetType, id, solIndex, targetStep) {
+        let baseBoard = null;
+        let sz = 9;
+        let baseLabels = {};
+        let firstTurn = 1;
+        let title = '';
+
+        if (targetType === 'shape') {
+          const preset = SHAPE_PRESETS[id];
+          if (!preset) return;
+          sz = 9;
+          baseBoard = createEmptyBoard(9);
+          const { black: defenderWall, white: attackerRing } = buildSealedShape(preset.eye);
+          for (const [dx, dy] of defenderWall) if (dx < 9 && dy < 9) baseBoard[dy][dx] = 2;
+          for (const [ax, ay] of attackerRing) if (ax < 9 && ay < 9) baseBoard[ay][ax] = 1;
+          firstTurn = 1;
+          title = preset.name;
+        } else {
+          const q = questions.find(item => item.id === id);
+          if (!q) return;
+          sz = q.boardSize || 19;
+          baseBoard = q.board.map(r => [...r]);
+          baseLabels = { ...(q.labels || {}) };
+          firstTurn = q.firstTurn || 1;
+          title = q.title;
+        }
+
+        const sols = getTargetSolutionsArray(targetType, id);
+        const solObj = sols[solIndex];
+        const moves = solObj && Array.isArray(solObj.moves) ? solObj.moves : [];
+
+        resetState(sz, false);
+        board = baseBoard.map(r => [...r]);
+        labels = { ...baseLabels };
+        nextColor = firstTurn;
+        setMode('alternate');
+        showNumbers = true;
+
+        const clamped = Math.max(0, Math.min(targetStep, moves.length));
+        for (let i = 0; i < clamped; i++) {
+          const mv = moves[i];
+          if (board[mv.y] && board[mv.y][mv.x] === 0) {
+            board[mv.y][mv.x] = mv.color;
+            const opp = mv.color === 1 ? 2 : 1;
+            let caps = 0;
+            if (autoCapture) {
+              for (const [nx, ny] of getNeighbors(mv.x, mv.y)) {
+                if (board[ny][nx] === opp) {
+                  const grp = getGroupAndLiberties(nx, ny, board);
+                  if (grp.liberties === 0) {
+                    for (const [sx, sy] of grp.stones) {
+                      board[sy][sx] = 0;
+                      moveNums[sy][sx] = 0;
+                      caps++;
+                    }
+                  }
+                }
+              }
+            }
+            if (opp === 1) blackCaptured += caps;
+            else whiteCaptured += caps;
+            moveCounter += 1;
+            moveNums[mv.y][mv.x] = moveCounter;
+            moveSequence.push({ ...mv, comment: mv.comment || '' });
+            lastMove = { x: mv.x, y: mv.y };
+            nextColor = mv.color === 1 ? 2 : 1;
+          }
+        }
+
+        activeTargetType = targetType;
+        activeQuestionId = id;
+        activeSolutionIndex = solIndex;
+        activeJosekiReplay = null;
+        activeSolutionReplay = { targetType, id, solIndex, step: clamped };
+
+        const solName = solObj ? solObj.name : `sol${solIndex + 1}`;
+        josekiStepLabel.textContent = `${solName}: ${clamped} / ${moves.length}`;
+        josekiReplayControls.classList.remove('hidden');
+        josekiReplayControls.classList.add('flex');
+        btnSaveQuestionSolution.classList.remove('hidden');
+        btnSaveWrongSolution.classList.remove('hidden');
+        syncSolutionPickerUI();
+        syncMoveCommentUI();
+
+        if (clamped > 0 && moves[clamped - 1] && moves[clamped - 1].comment) {
+          showStatus(`${solName} Move #${clamped}: ${moves[clamped - 1].comment}`);
+        } else {
+          showStatus(`Replaying ${title} (${solName}: step ${clamped}/${moves.length}).`);
+        }
+
+        updateUI();
+        draw();
+      }
+
+      function loadQuestionToBoard(qId, switchToBoardTab = true, showSolutionMode = false, solIdx = 0) {
         const q = questions.find(item => item.id === qId);
         if (!q) return;
+        normalizeQuestionSolutions(q);
+
         resetState(q.boardSize || 19, false);
         board = q.board.map(r => [...r]);
         labels = { ...(q.labels || {}) };
         nextColor = q.firstTurn || 1;
         setMode('alternate');
+        showNumbers = true;
+
+        activeTargetType = 'question';
+        activeQuestionId = q.id;
+        activeSolutionIndex = solIdx;
+        activeJosekiReplay = null;
+        activeSolutionReplay = null;
+        josekiReplayControls.classList.add('hidden');
+        josekiReplayControls.classList.remove('flex');
 
         studyBaseline = {
           title: q.title,
@@ -1473,14 +2143,98 @@
           snapshot: cloneState()
         };
         activeStudyTitle.textContent = `Question: ${q.title}`;
+        const diffInfo = getDifficultyBadgeInfo(q.difficulty || 'Medium');
+        activeDifficultyBadge.textContent = diffInfo.label;
+        activeDifficultyBadge.className = `px-2 py-0.5 rounded-full text-[11px] font-semibold border ${diffInfo.cls}`;
+        activeDifficultyBadge.classList.remove('hidden');
+
         activeStudySub.textContent = q.notes ? `— ${q.notes}` : `(${nextColor === 1 ? 'Black' : 'White'} to play)`;
         activeStudyBar.classList.remove('hidden');
 
-        switchTab('board');
-        showStatus(`Loaded question "${q.title}". ${nextColor === 1 ? 'Black' : 'White'} to play.`);
+        btnSaveQuestionSolution.classList.remove('hidden');
+        btnSaveWrongSolution.classList.remove('hidden');
+        syncSolutionPickerUI();
+        syncMoveCommentUI();
+
+        if (showSolutionMode && q.solutions.length > 0) {
+          const targetIdx = Math.min(solIdx, q.solutions.length - 1);
+          applyTargetSolutionStep('question', q.id, targetIdx, q.solutions[targetIdx].moves.length);
+        } else {
+          showStatus(`Loaded "${q.title}". ${nextColor === 1 ? 'Black' : 'White'} to play — moves start at 1.`);
+        }
+
+        if (switchToBoardTab) switchTab('board');
         updateUI();
         draw();
       }
+
+      function recordTargetVariation(solType) {
+        if (!activeTargetType || !activeQuestionId) return;
+        if (moveSequence.length === 0) {
+          showStatus('Play at least 1 move on the board first to save this variation.');
+          return;
+        }
+        const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
+        sols.push({
+          name: '',
+          type: solType === 'wrong' ? 'wrong' : 'correct',
+          moves: moveSequence.map(m => ({ ...m, comment: m.comment || '' }))
+        });
+        relabelSolutionsList(sols);
+        activeSolutionIndex = sols.length - 1;
+        const savedName = sols[activeSolutionIndex].name;
+        saveDatabaseToStorage();
+        syncSolutionPickerUI();
+        renderDatabase();
+        renderShapesCatalog();
+        showStatus(`Saved ${savedName} (${solType === 'wrong' ? 'Wrong / Failure variation' : 'Correct solution'}). Press [R] to reset and record another!`);
+      }
+
+      btnSaveQuestionSolution.addEventListener('click', () => recordTargetVariation('correct'));
+      btnSaveWrongSolution.addEventListener('click', () => recordTargetVariation('wrong'));
+
+      solutionSelect.addEventListener('change', () => {
+        activeSolutionIndex = parseInt(solutionSelect.value, 10) || 0;
+        if (activeTargetType && activeQuestionId) {
+          const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
+          if (sols[activeSolutionIndex]) {
+            applyTargetSolutionStep(activeTargetType, activeQuestionId, activeSolutionIndex, sols[activeSolutionIndex].moves.length);
+          }
+        }
+      });
+
+      btnShowQuestionSolution.addEventListener('click', () => {
+        if (!activeTargetType || !activeQuestionId) return;
+        const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
+        if (sols.length > 0) {
+          const idx = Math.min(activeSolutionIndex, sols.length - 1);
+          applyTargetSolutionStep(activeTargetType, activeQuestionId, idx, sols[idx].moves.length);
+        }
+      });
+
+      btnDeleteSelectedSolution.addEventListener('click', () => {
+        if (!activeTargetType || !activeQuestionId) return;
+        const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
+        if (sols.length === 0) return;
+        const idx = Math.min(activeSolutionIndex, sols.length - 1);
+        const removedName = sols[idx].name || `sol${idx + 1}`;
+        sols.splice(idx, 1);
+        relabelSolutionsList(sols);
+        activeSolutionIndex = Math.max(0, sols.length - 1);
+        activeSolutionReplay = null;
+        saveDatabaseToStorage();
+
+        if (studyBaseline) {
+          restoreState(studyBaseline.snapshot);
+        }
+        josekiReplayControls.classList.add('hidden');
+        josekiReplayControls.classList.remove('flex');
+        syncSolutionPickerUI();
+        syncMoveCommentUI();
+        renderDatabase();
+        renderShapesCatalog();
+        showStatus(`Deleted ${removedName}.`);
+      });
 
       function renderDatabase() {
         folderTotalCountEl.textContent = `${folders.length} folder${folders.length === 1 ? '' : 's'}`;
@@ -1530,14 +2284,18 @@
           currentFolderHeading.textContent = 'All Questions';
           btnDeleteCurrentFolder.classList.add('hidden');
         }
+
+        if (selectedDifficultyFilter !== '__ALL__') {
+          filtered = filtered.filter(q => (q.difficulty || 'Medium') === selectedDifficultyFilter);
+        }
         currentFolderSubCount.textContent = `(${filtered.length})`;
 
         if (filtered.length === 0) {
           questionsGrid.innerHTML = `
             <div class="sm:col-span-2 lg:col-span-3 bg-white rounded-xl p-8 text-center border border-dashed border-stone-300 flex flex-col items-center justify-center gap-2">
-              <p class="text-sm font-semibold text-stone-700">No saved questions in this view yet</p>
+              <p class="text-sm font-semibold text-stone-700">No saved questions match this filter</p>
               <p class="text-xs text-stone-500 max-w-md">
-                Go to <strong>1. Blank Board</strong>, place Black and White stones to create any situation, and click <strong>+ Save as Question [Q]</strong> to store it here.
+                Go to <strong>1. Blank Board</strong>, place Black and White stones to create any situation, and click <strong>+ Save Question [Q]</strong> to store it here.
               </p>
             </div>
           `;
@@ -1545,20 +2303,55 @@
         }
 
         questionsGrid.innerHTML = filtered.map(q => {
+          normalizeQuestionSolutions(q);
           const thumb = renderMiniBoardSvg(q.board, q.boardSize || 19, q.labels || {}, null);
           const turnText = (q.firstTurn || 1) === 1 ? 'Black to play' : 'White to play';
+          const diffInfo = getDifficultyBadgeInfo(q.difficulty || 'Medium');
+
           let folderOpts = `<option value="" ${!q.folder ? 'selected' : ''}>Uncategorized</option>`;
           for (const f of folders) {
             const esc = f.replace(/"/g, '&quot;');
             folderOpts += `<option value="${esc}" ${q.folder === f ? 'selected' : ''}>${f}</option>`;
           }
 
+          const diffOpts = ['Easy', 'Medium', 'Hard'].map(d =>
+            `<option value="${d}" ${(q.difficulty || 'Medium') === d ? 'selected' : ''}>${d}</option>`
+          ).join('');
+
+          const sols = q.solutions || [];
+          const solChips = sols.length > 0
+            ? `<div class="flex flex-wrap items-center gap-1 justify-center">
+                ${sols.map((s, idx) => {
+                  const isW = s.type === 'wrong';
+                  const wrapCls = isW
+                    ? 'bg-rose-50 border-rose-200 text-rose-800'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-800';
+                  const btnHover = isW ? 'hover:bg-rose-100' : 'hover:bg-emerald-100';
+                  const delCls = isW
+                    ? 'text-rose-600 hover:text-red-700 hover:bg-red-100 border-rose-200'
+                    : 'text-emerald-600 hover:text-red-600 hover:bg-red-50 border-emerald-200';
+                  return `
+                  <div class="inline-flex items-center rounded-md border text-[11px] font-medium ${wrapCls}">
+                    <button type="button" data-sol-q="${q.id}" data-sol-idx="${idx}" class="px-2 py-0.5 ${btnHover} rounded-l-md transition">
+                      ${s.name || (isW ? 'wrong' : 'sol')}
+                    </button>
+                    <button type="button" data-del-q-sol="${q.id}" data-sol-idx="${idx}" title="Delete this variation" class="px-1.5 py-0.5 ${delCls} rounded-r-md border-l transition">
+                      ✕
+                    </button>
+                  </div>`;
+                }).join('')}
+              </div>`
+            : `<div class="text-[11px] text-stone-400 text-center">No solutions saved yet</div>`;
+
           return `
             <div class="bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col justify-between gap-3 hover:border-stone-400 transition">
               <div class="flex flex-col gap-2">
                 <div class="flex items-start justify-between gap-2">
                   <div>
-                    <h3 class="text-sm font-semibold text-stone-900">${q.title}</h3>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <h3 class="text-sm font-semibold text-stone-900">${q.title}</h3>
+                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${diffInfo.cls}">${diffInfo.label}</span>
+                    </div>
                     <span class="text-[11px] text-stone-500">${q.boardSize || 19}×${q.boardSize || 19} · ${turnText}</span>
                   </div>
                   <button type="button" data-del-q="${q.id}" title="Delete question" class="text-xs text-stone-400 hover:text-red-600 px-1.5 py-0.5 rounded">
@@ -1568,18 +2361,22 @@
 
                 <div class="flex justify-center py-1">${thumb}</div>
 
+                ${solChips}
+
                 ${q.notes ? `<p class="text-xs text-stone-600 bg-stone-50 rounded-lg px-2.5 py-1.5 border border-stone-100">${q.notes}</p>` : ''}
               </div>
 
               <div class="flex flex-col gap-2 pt-1 border-t border-stone-100">
-                <div class="flex items-center justify-between gap-2 text-xs">
-                  <span class="text-stone-500">Folder:</span>
+                <div class="grid grid-cols-2 gap-1.5 text-xs">
                   <select data-move-q="${q.id}" aria-label="Move question to folder" class="text-xs bg-stone-50 border border-stone-200 rounded-md px-2 py-1 text-stone-800">
                     ${folderOpts}
                   </select>
+                  <select data-diff-q="${q.id}" aria-label="Change question difficulty" class="text-xs bg-stone-50 border border-stone-200 rounded-md px-2 py-1 text-stone-800">
+                    ${diffOpts}
+                  </select>
                 </div>
-                <button type="button" data-load-q="${q.id}" class="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
-                  Load to Board &rarr;
+                <button type="button" data-load-q="${q.id}" class="w-full py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
+                  Practice on Board &rarr;
                 </button>
               </div>
             </div>
@@ -1587,7 +2384,32 @@
         }).join('');
 
         questionsGrid.querySelectorAll('[data-load-q]').forEach(btn => {
-          btn.addEventListener('click', () => loadQuestionToBoard(btn.getAttribute('data-load-q')));
+          btn.addEventListener('click', () => loadQuestionToBoard(btn.getAttribute('data-load-q'), true, false, 0));
+        });
+
+        questionsGrid.querySelectorAll('[data-sol-q]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-sol-q');
+            const idx = parseInt(btn.getAttribute('data-sol-idx'), 10) || 0;
+            loadQuestionToBoard(id, true, true, idx);
+          });
+        });
+
+        questionsGrid.querySelectorAll('[data-del-q-sol]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-del-q-sol');
+            const idx = parseInt(btn.getAttribute('data-sol-idx'), 10);
+            const targetQ = questions.find(item => item.id === id);
+            if (targetQ && Array.isArray(targetQ.solutions) && idx >= 0 && idx < targetQ.solutions.length) {
+              targetQ.solutions.splice(idx, 1);
+              relabelSolutionsList(targetQ.solutions);
+              saveDatabaseToStorage();
+              if (activeTargetType === 'question' && activeQuestionId === id) {
+                syncSolutionPickerUI();
+              }
+              renderDatabase();
+            }
+          });
         });
 
         questionsGrid.querySelectorAll('[data-del-q]').forEach(btn => {
@@ -1611,6 +2433,400 @@
             }
           });
         });
+
+        questionsGrid.querySelectorAll('[data-diff-q]').forEach(sel => {
+          sel.addEventListener('change', () => {
+            const id = sel.getAttribute('data-diff-q');
+            const targetQ = questions.find(item => item.id === id);
+            if (targetQ) {
+              targetQ.difficulty = sel.value;
+              saveDatabaseToStorage();
+              renderDatabase();
+            }
+          });
+        });
+      }
+
+      // ==========================================
+      // MODULE 4: GO JOSEKI (ORDERED MOVES & REPLAY WITH REMARKS)
+      // ==========================================
+      function populateJosekiFolderSelectModal() {
+        let html = `<option value="">Uncategorized</option>`;
+        for (const f of josekiFolders) {
+          const esc = f.replace(/"/g, '&quot;');
+          const sel = (selectedJosekiFolderFilter === f) ? 'selected' : '';
+          html += `<option value="${esc}" ${sel}>${f}</option>`;
+        }
+        jFolderSelect.innerHTML = html;
+      }
+
+      function openSaveJosekiModal() {
+        if (moveSequence.length === 0) {
+          showStatus('Play some moves on the board first so their order can be saved as a joseki.');
+          return;
+        }
+        populateJosekiFolderSelectModal();
+        josekiMoveCountPreview.textContent = `${moveSequence.length} ordered move${moveSequence.length === 1 ? '' : 's'}`;
+        jTitleInput.value = `Joseki #${josekiList.length + 1}`;
+        jNewFolderModalInput.value = '';
+        jNotesInput.value = '';
+        saveJosekiModal.classList.remove('hidden');
+        jTitleInput.focus();
+      }
+
+      function closeSaveJosekiModal() {
+        saveJosekiModal.classList.add('hidden');
+      }
+
+      btnOpenSaveJosekiModal.addEventListener('click', openSaveJosekiModal);
+      btnCloseSaveJosekiModal.addEventListener('click', closeSaveJosekiModal);
+      btnCancelSaveJosekiModal.addEventListener('click', closeSaveJosekiModal);
+
+      btnAddJosekiFolderInModal.addEventListener('click', () => {
+        const name = jNewFolderModalInput.value.trim();
+        if (!name) return;
+        if (!josekiFolders.includes(name)) {
+          josekiFolders.push(name);
+          saveDatabaseToStorage();
+        }
+        selectedJosekiFolderFilter = name;
+        populateJosekiFolderSelectModal();
+        jFolderSelect.value = name;
+        jNewFolderModalInput.value = '';
+      });
+
+      btnConfirmSaveJoseki.addEventListener('click', () => {
+        const title = jTitleInput.value.trim() || `Joseki #${josekiList.length + 1}`;
+        const pendingNew = jNewFolderModalInput.value.trim();
+        let folder = jFolderSelect.value;
+        if (pendingNew) {
+          if (!josekiFolders.includes(pendingNew)) josekiFolders.push(pendingNew);
+          folder = pendingNew;
+        }
+        const notes = jNotesInput.value.trim();
+
+        const newJoseki = {
+          id: 'j_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          title,
+          folder,
+          notes,
+          boardSize,
+          moves: moveSequence.map(m => ({ ...m, comment: m.comment || '' })),
+          createdAt: new Date().toLocaleDateString()
+        };
+
+        josekiList.unshift(newJoseki);
+        saveDatabaseToStorage();
+        closeSaveJosekiModal();
+        updateUI();
+        showStatus(`Saved joseki "${title}" (${newJoseki.moves.length} moves).`);
+      });
+
+      function createNewJosekiFolderFromSidebar() {
+        const name = newJosekiFolderInput.value.trim();
+        if (!name) return;
+        if (!josekiFolders.includes(name)) {
+          josekiFolders.push(name);
+          saveDatabaseToStorage();
+        }
+        newJosekiFolderInput.value = '';
+        selectedJosekiFolderFilter = name;
+        renderJosekiLibrary();
+      }
+
+      btnCreateJosekiFolder.addEventListener('click', createNewJosekiFolderFromSidebar);
+      newJosekiFolderInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') createNewJosekiFolderFromSidebar();
+      });
+
+      btnDeleteCurrentJosekiFolder.addEventListener('click', () => {
+        if (selectedJosekiFolderFilter === '__ALL__' || selectedJosekiFolderFilter === '__UNCATEGORIZED__') return;
+        const target = selectedJosekiFolderFilter;
+        josekiFolders = josekiFolders.filter(f => f !== target);
+        josekiList.forEach(j => {
+          if (j.folder === target) j.folder = '';
+        });
+        selectedJosekiFolderFilter = '__ALL__';
+        saveDatabaseToStorage();
+        renderJosekiLibrary();
+      });
+
+      btnGoToBoardFromJoseki.addEventListener('click', () => switchTab('board'));
+
+      btnExportJoseki.addEventListener('click', () => {
+        const payload = JSON.stringify({ folders: josekiFolders, joseki: josekiList }, null, 2);
+        const blob = new Blob([payload], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'go_joseki_database.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+
+      inputImportJoseki.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(reader.result);
+            if (Array.isArray(parsed.folders)) {
+              parsed.folders.forEach(f => {
+                if (typeof f === 'string' && f && !josekiFolders.includes(f)) josekiFolders.push(f);
+              });
+            }
+            if (Array.isArray(parsed.joseki)) {
+              josekiList = [...parsed.joseki, ...josekiList];
+            }
+            saveDatabaseToStorage();
+            updateUI();
+            renderJosekiLibrary();
+          } catch (_) {}
+        };
+        reader.readAsText(file);
+        inputImportJoseki.value = '';
+      });
+
+      function applyJosekiStep(item, targetStep) {
+        const sz = item.boardSize || 19;
+        resetState(sz, false);
+        const clamped = Math.max(0, Math.min(targetStep, item.moves.length));
+        setMode('alternate');
+        showNumbers = true;
+
+        for (let i = 0; i < clamped; i++) {
+          const mv = item.moves[i];
+          if (board[mv.y] && board[mv.y][mv.x] === 0) {
+            board[mv.y][mv.x] = mv.color;
+            const opp = mv.color === 1 ? 2 : 1;
+            let caps = 0;
+            if (autoCapture) {
+              for (const [nx, ny] of getNeighbors(mv.x, mv.y)) {
+                if (board[ny][nx] === opp) {
+                  const grp = getGroupAndLiberties(nx, ny, board);
+                  if (grp.liberties === 0) {
+                    for (const [sx, sy] of grp.stones) {
+                      board[sy][sx] = 0;
+                      moveNums[sy][sx] = 0;
+                      caps++;
+                    }
+                  }
+                }
+              }
+            }
+            if (opp === 1) blackCaptured += caps;
+            else whiteCaptured += caps;
+            moveCounter += 1;
+            moveNums[mv.y][mv.x] = moveCounter;
+            moveSequence.push({ ...mv, comment: mv.comment || '' });
+            lastMove = { x: mv.x, y: mv.y };
+            nextColor = mv.color === 1 ? 2 : 1;
+          }
+        }
+
+        activeTargetType = 'joseki';
+        activeJosekiReplay = { item, step: clamped };
+        activeSolutionReplay = null;
+        josekiStepLabel.textContent = `${clamped} / ${item.moves.length}`;
+        josekiReplayControls.classList.remove('hidden');
+        josekiReplayControls.classList.add('flex');
+        solutionPickerGroup.classList.add('hidden');
+        solutionPickerGroup.classList.remove('flex');
+        btnSaveQuestionSolution.classList.add('hidden');
+          btnSaveWrongSolution.classList.add('hidden');
+        syncMoveCommentUI();
+
+        if (clamped > 0 && item.moves[clamped - 1] && item.moves[clamped - 1].comment) {
+          showStatus(`Move #${clamped}: ${item.moves[clamped - 1].comment}`);
+        }
+        updateUI();
+        draw();
+      }
+
+      function loadJosekiToBoard(jId) {
+        const item = josekiList.find(j => j.id === jId);
+        if (!item) return;
+        applyJosekiStep(item, item.moves.length);
+        studyBaseline = {
+          title: item.title,
+          subtitle: item.notes || `${item.moves.length} moves`,
+          snapshot: cloneState()
+        };
+        activeStudyTitle.textContent = `Joseki: ${item.title}`;
+        activeDifficultyBadge.classList.add('hidden');
+        activeStudySub.textContent = item.notes ? `— ${item.notes}` : `(${item.moves.length} moves)`;
+        activeStudyBar.classList.remove('hidden');
+        switchTab('board');
+        showStatus(`Loaded joseki "${item.title}" (${item.moves.length} moves). Use < and > to step through and edit move remarks.`);
+      }
+
+      btnJosekiFirst.addEventListener('click', () => {
+        if (activeJosekiReplay) applyJosekiStep(activeJosekiReplay.item, 0);
+        else if (activeSolutionReplay) applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, 0);
+      });
+      btnJosekiPrev.addEventListener('click', () => {
+        if (activeJosekiReplay) applyJosekiStep(activeJosekiReplay.item, activeJosekiReplay.step - 1);
+        else if (activeSolutionReplay) applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, activeSolutionReplay.step - 1);
+      });
+      btnJosekiNext.addEventListener('click', () => {
+        if (activeJosekiReplay) applyJosekiStep(activeJosekiReplay.item, activeJosekiReplay.step + 1);
+        else if (activeSolutionReplay) applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, activeSolutionReplay.step + 1);
+      });
+      btnJosekiLast.addEventListener('click', () => {
+        if (activeJosekiReplay) applyJosekiStep(activeJosekiReplay.item, activeJosekiReplay.item.moves.length);
+        else if (activeSolutionReplay) {
+          const sols = getTargetSolutionsArray(activeSolutionReplay.targetType, activeSolutionReplay.id);
+          const len = sols[activeSolutionReplay.solIndex] ? sols[activeSolutionReplay.solIndex].moves.length : 0;
+          applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, len);
+        }
+      });
+
+      function buildJosekiPreviewBoard(item) {
+        const sz = item.boardSize || 19;
+        const b = createEmptyBoard(sz);
+        const nums = createEmptyBoard(sz);
+        item.moves.forEach((mv, idx) => {
+          if (b[mv.y] && mv.y < sz && mv.x < sz) {
+            b[mv.y][mv.x] = mv.color;
+            nums[mv.y][mv.x] = idx + 1;
+          }
+        });
+        return { b, nums };
+      }
+
+      function renderJosekiLibrary() {
+        josekiFolderTotalCountEl.textContent = `${josekiFolders.length} folder${josekiFolders.length === 1 ? '' : 's'}`;
+        const uncatCount = josekiList.filter(j => !j.folder).length;
+
+        let folderHtml = `
+          <button type="button" data-jfolder-filter="__ALL__" class="jfolder-filter-btn ${selectedJosekiFolderFilter === '__ALL__' ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex items-center justify-between transition">
+            <span>All Joseki</span>
+            <span class="opacity-75">${josekiList.length}</span>
+          </button>
+          <button type="button" data-jfolder-filter="__UNCATEGORIZED__" class="jfolder-filter-btn ${selectedJosekiFolderFilter === '__UNCATEGORIZED__' ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex items-center justify-between transition">
+            <span>Uncategorized</span>
+            <span class="opacity-75">${uncatCount}</span>
+          </button>
+        `;
+
+        for (const f of josekiFolders) {
+          const count = josekiList.filter(j => j.folder === f).length;
+          const active = selectedJosekiFolderFilter === f;
+          const esc = f.replace(/"/g, '&quot;');
+          folderHtml += `
+            <button type="button" data-jfolder-filter="${esc}" class="jfolder-filter-btn ${active ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex items-center justify-between transition">
+              <span class="truncate pr-2">📁 ${f}</span>
+              <span class="opacity-75">${count}</span>
+            </button>
+          `;
+        }
+        josekiFolderListEl.innerHTML = folderHtml;
+
+        josekiFolderListEl.querySelectorAll('.jfolder-filter-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            selectedJosekiFolderFilter = btn.getAttribute('data-jfolder-filter');
+            renderJosekiLibrary();
+          });
+        });
+
+        let filtered = josekiList;
+        if (selectedJosekiFolderFilter === '__UNCATEGORIZED__') {
+          filtered = josekiList.filter(j => !j.folder);
+          currentJosekiFolderHeading.textContent = 'Uncategorized Joseki';
+          btnDeleteCurrentJosekiFolder.classList.add('hidden');
+        } else if (selectedJosekiFolderFilter !== '__ALL__') {
+          filtered = josekiList.filter(j => j.folder === selectedJosekiFolderFilter);
+          currentJosekiFolderHeading.textContent = `Folder: ${selectedJosekiFolderFilter}`;
+          btnDeleteCurrentJosekiFolder.classList.remove('hidden');
+        } else {
+          currentJosekiFolderHeading.textContent = 'All Joseki';
+          btnDeleteCurrentJosekiFolder.classList.add('hidden');
+        }
+        currentJosekiFolderSubCount.textContent = `(${filtered.length})`;
+
+        if (filtered.length === 0) {
+          josekiGrid.innerHTML = `
+            <div class="sm:col-span-2 lg:col-span-3 bg-white rounded-xl p-8 text-center border border-dashed border-stone-300 flex flex-col items-center justify-center gap-2">
+              <p class="text-sm font-semibold text-stone-700">No saved joseki in this folder yet</p>
+              <p class="text-xs text-stone-500 max-w-md">
+                Play out a sequence on <strong>1. Blank Board</strong> and click <strong>+ Save Joseki [J]</strong> to store the exact move order for step-by-step replay.
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        josekiGrid.innerHTML = filtered.map(j => {
+          const { b, nums } = buildJosekiPreviewBoard(j);
+          const thumb = renderMiniBoardSvg(b, j.boardSize || 19, { __moveNums: nums }, null);
+          const commentCount = Array.isArray(j.moves) ? j.moves.filter(m => m.comment).length : 0;
+          let folderOpts = `<option value="" ${!j.folder ? 'selected' : ''}>Uncategorized</option>`;
+          for (const f of josekiFolders) {
+            const esc = f.replace(/"/g, '&quot;');
+            folderOpts += `<option value="${esc}" ${j.folder === f ? 'selected' : ''}>${f}</option>`;
+          }
+
+          return `
+            <div class="bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col justify-between gap-3 hover:border-stone-400 transition">
+              <div class="flex flex-col gap-2">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 class="text-sm font-semibold text-stone-900">${j.title}</h3>
+                    <span class="text-[11px] text-stone-500">${j.boardSize || 19}×${j.boardSize || 19} · ${j.moves.length} moves${commentCount > 0 ? ` · ${commentCount} remark${commentCount === 1 ? '' : 's'}` : ''}</span>
+                  </div>
+                  <button type="button" data-del-j="${j.id}" title="Delete joseki" class="text-xs text-stone-400 hover:text-red-600 px-1.5 py-0.5 rounded">
+                    Delete
+                  </button>
+                </div>
+
+                <div class="flex justify-center py-1">${thumb}</div>
+
+                ${j.notes ? `<p class="text-xs text-stone-600 bg-stone-50 rounded-lg px-2.5 py-1.5 border border-stone-100">${j.notes}</p>` : ''}
+              </div>
+
+              <div class="flex flex-col gap-2 pt-1 border-t border-stone-100">
+                <div class="flex items-center justify-between gap-2 text-xs">
+                  <span class="text-stone-500">Folder:</span>
+                  <select data-move-j="${j.id}" aria-label="Move joseki to folder" class="text-xs bg-stone-50 border border-stone-200 rounded-md px-2 py-1 text-stone-800">
+                    ${folderOpts}
+                  </select>
+                </div>
+                <button type="button" data-load-j="${j.id}" class="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+                  Replay Joseki on Board &rarr;
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        josekiGrid.querySelectorAll('[data-load-j]').forEach(btn => {
+          btn.addEventListener('click', () => loadJosekiToBoard(btn.getAttribute('data-load-j')));
+        });
+
+        josekiGrid.querySelectorAll('[data-del-j]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-del-j');
+            josekiList = josekiList.filter(item => item.id !== id);
+            saveDatabaseToStorage();
+            updateUI();
+            renderJosekiLibrary();
+          });
+        });
+
+        josekiGrid.querySelectorAll('[data-move-j]').forEach(sel => {
+          sel.addEventListener('change', () => {
+            const id = sel.getAttribute('data-move-j');
+            const targetJ = josekiList.find(item => item.id === id);
+            if (targetJ) {
+              targetJ.folder = sel.value;
+              saveDatabaseToStorage();
+              renderJosekiLibrary();
+            }
+          });
+        });
       }
 
       window.addEventListener('keydown', (e) => {
@@ -1618,6 +2834,10 @@
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
         if (!saveQuestionModal.classList.contains('hidden')) {
           if (e.key === 'Escape') closeSaveQuestionModal();
+          return;
+        }
+        if (!saveJosekiModal.classList.contains('hidden')) {
+          if (e.key === 'Escape') closeSaveJosekiModal();
           return;
         }
         const k = e.key.toLowerCase();
@@ -1634,6 +2854,7 @@
         else if (k === 's') { btnSound.click(); }
         else if (k === 'x') { btnClear.click(); }
         else if (k === 'q') { openSaveQuestionModal(); }
+        else if (k === 'j') { openSaveJosekiModal(); }
         else if (k === 'r' && studyBaseline) { btnResetBaseline.click(); }
       });
 
@@ -1646,9 +2867,13 @@
 
       window.onload = () => {
         loadDatabaseFromStorage();
-        resetState(19);
         renderShapesCatalog();
         renderDatabase();
+        if (questions.length > 0) {
+          loadQuestionToBoard(questions[0].id);
+        } else {
+          resetState(19);
+        }
       };
     })();
   </script>
