@@ -1056,11 +1056,12 @@
       // ==========================================
       function buildSealedShape(eyeCells) {
         const eyeSet = new Set(eyeCells.map(([x, y]) => `${x},${y}`));
-        const whiteSet = new Set();
-        const blackSet = new Set();
-        const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+        const whiteSet = new Set(); // wall enclosing the eye  → rendered White
+        const blackSet = new Set(); // outer ring               → rendered Black
+        const dirs  = [[1,0],[-1,0],[0,1],[0,-1]];
         const dirs8 = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
 
+        // 1) White wall: every point adjacent (8-way) to an eye point
         for (const [ex, ey] of eyeCells) {
           for (const [dx, dy] of dirs8) {
             const nx = ex + dx, ny = ey + dy;
@@ -1070,13 +1071,14 @@
           }
         }
 
-        for (const bKey of blackSet) {
-          const [bx, by] = bKey.split(',').map(Number);
+        // 2) Black outer: every point adjacent (4-way) to the White wall
+        for (const wKey of whiteSet) {            // ← iterate WHITE (it is populated)
+          const [wx, wy] = wKey.split(',').map(Number);
           for (const [dx, dy] of dirs) {
-            const nx = bx + dx, ny = by + dy;
+            const nx = wx + dx, ny = wy + dy;
             const k = `${nx},${ny}`;
-            if (nx >= 0 && ny >= 0 && !eyeSet.has(k) && !blackSet.has(k)) {
-              blackSet.add(k);
+            if (nx >= 0 && ny >= 0 && !eyeSet.has(k) && !whiteSet.has(k)) {
+              blackSet.add(k);                      // ← outer stones go into BLACK
             }
           }
         }
