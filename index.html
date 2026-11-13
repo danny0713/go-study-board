@@ -1056,8 +1056,8 @@
       // ==========================================
       function buildSealedShape(eyeCells) {
         const eyeSet = new Set(eyeCells.map(([x, y]) => `${x},${y}`));
-        const blackSet = new Set();
         const whiteSet = new Set();
+        const blackSet = new Set();
         const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
         const dirs8 = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
 
@@ -1065,7 +1065,7 @@
           for (const [dx, dy] of dirs8) {
             const nx = ex + dx, ny = ey + dy;
             if (nx >= 0 && ny >= 0 && !eyeSet.has(`${nx},${ny}`)) {
-              blackSet.add(`${nx},${ny}`);
+              whiteSet.add(`${nx},${ny}`);
             }
           }
         }
@@ -1076,7 +1076,7 @@
             const nx = bx + dx, ny = by + dy;
             const k = `${nx},${ny}`;
             if (nx >= 0 && ny >= 0 && !eyeSet.has(k) && !blackSet.has(k)) {
-              whiteSet.add(k);
+              blackSet.add(k);
             }
           }
         }
@@ -1129,7 +1129,7 @@
           vital: [1, 0],
           vitalLabel: 'B9 (2-1 Point)',
           eye: [[0,0],[1,0],[2,0],[0,1]],
-          hint: '盤角曲四 (Bent Four in Corner): White B9 -> Black A9 -> White A8 (Ko).'
+          hint: '盤角曲四 (Bent Four in Corner): Black B9 -> White A9 -> Black A8 (Ko).'
         },
         square4: {
           name: '方四 · Square Four',
@@ -1192,7 +1192,7 @@
           vital: [1, 1],
           vitalLabel: 'B8 (2-2 Point)',
           eye: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]],
-          hint: '角部板六 (Corner Rect Six): 0 outside liberties — White B8 kills.'
+          hint: '角部板六 (Corner Rect Six): 0 outside liberties — Black B8 kills.'
         }
       };
 
@@ -1292,7 +1292,7 @@
         for (const [wx, wy] of white) if (wx < 9 && wy < 9) board[wy][wx] = 2;
 
         setMode('alternate');
-        nextColor = 2;
+        nextColor = 1;
         studyBaseline = {
           title: preset.name,
           subtitle: `Vital Point: ${preset.vitalLabel}`,
