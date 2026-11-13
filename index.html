@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Go Study Board — Blank Goban</title>
+  <title>Go Study Board — Blank Goban, Classic Shapes &amp; Question Database</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -25,6 +25,15 @@
       color: #ffffff !important;
       border-color: #1f2937 !important;
     }
+    .tab-active {
+      background-color: #1f2937 !important;
+      color: #ffffff !important;
+    }
+    .folder-active {
+      background-color: #1f2937 !important;
+      color: #ffffff !important;
+      border-color: #1f2937 !important;
+    }
     canvas {
       touch-action: manipulation;
       display: block;
@@ -32,20 +41,34 @@
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-3 sm:p-5">
-  <div class="w-full max-w-4xl flex flex-col gap-3">
-    <!-- Top Header & Status -->
-    <div class="flex flex-wrap items-center justify-between gap-2 bg-white rounded-xl px-4 py-2.5 shadow-sm border border-stone-200">
+  <div class="w-full max-w-5xl flex flex-col gap-3">
+    <!-- Top Header & Module Switcher -->
+    <div class="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl px-4 py-2.5 shadow-sm border border-stone-200">
       <div class="flex items-center gap-3">
         <div class="flex items-center gap-2">
           <span class="w-4 h-4 rounded-full bg-stone-900 inline-block shadow-sm"></span>
           <span class="font-semibold text-stone-800 text-sm sm:text-base">Go Study Board</span>
         </div>
+        <!-- 3 Independent Modules Navigation -->
+        <nav class="flex items-center bg-stone-100 p-1 rounded-lg border border-stone-200" aria-label="Main modules">
+          <button type="button" data-tab="board" class="module-tab tab-active px-3 py-1 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition">
+            1. Blank Board
+          </button>
+          <button type="button" data-tab="shapes" class="module-tab px-3 py-1 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition">
+            2. Go Shapes
+          </button>
+          <button type="button" data-tab="database" class="module-tab px-3 py-1 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition flex items-center gap-1.5">
+            <span>3. Question Database</span>
+            <span id="dbCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-stone-200 text-stone-800">0</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Board Status Counters -->
+      <div class="flex items-center gap-3 text-xs sm:text-sm text-stone-600">
         <span id="turnBadge" class="text-xs font-medium px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
           Next: Black
         </span>
-      </div>
-
-      <div class="flex items-center gap-3 text-xs sm:text-sm text-stone-600">
         <span class="flex items-center gap-1.5" title="Black stones captured by White">
           <span class="w-3 h-3 rounded-full bg-stone-900 inline-block"></span>
           Captured: <strong id="blackCaps" class="text-stone-900">0</strong>
@@ -59,99 +82,256 @@
       </div>
     </div>
 
-    <!-- Controls Toolbar -->
-    <div class="bg-white rounded-xl p-2.5 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-2">
-      <!-- Placement Modes -->
-      <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Stone placement mode">
-        <button type="button" data-mode="alternate" title="Shortcut: A" class="mode-btn btn-active px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
-          Alternate <kbd class="ml-1 opacity-60 font-sans">[A]</kbd>
-        </button>
-        <button type="button" data-mode="black" title="Shortcut: B" class="mode-btn px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-stone-900 inline-block"></span> Black <kbd class="opacity-60 font-sans">[B]</kbd>
-        </button>
-        <button type="button" data-mode="white" title="Shortcut: W" class="mode-btn px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-white border border-stone-400 inline-block"></span> White <kbd class="opacity-60 font-sans">[W]</kbd>
-        </button>
-        <button type="button" data-mode="erase" title="Shortcut: E" class="mode-btn px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
-          Erase <kbd class="ml-1 opacity-60 font-sans">[E]</kbd>
-        </button>
-        <button type="button" data-mode="label" title="Shortcut: M" class="mode-btn px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
-          Mark A/B/C <kbd class="ml-1 opacity-60 font-sans">[M]</kbd>
-        </button>
-      </div>
-
-      <!-- Board Size & Options -->
-      <div class="flex flex-wrap items-center gap-1.5">
-        <div class="flex items-center bg-stone-100 rounded-lg p-0.5 border border-stone-200">
-          <button type="button" data-size="9" class="size-btn px-2 py-1 rounded-md text-xs font-medium text-stone-600 hover:text-stone-900 transition">9×9</button>
-          <button type="button" data-size="13" class="size-btn px-2 py-1 rounded-md text-xs font-medium text-stone-600 hover:text-stone-900 transition">13×13</button>
-          <button type="button" data-size="19" class="size-btn btn-active px-2 py-1 rounded-md text-xs font-medium transition">19×19</button>
+    <!-- ==========================================
+         MODULE 1: BLANK BOARD (FREE STUDY & SETUP)
+         ========================================== -->
+    <section id="moduleBoard" class="flex flex-col gap-3">
+      <!-- Controls Toolbar -->
+      <div class="bg-white rounded-xl p-2.5 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-2">
+        <!-- Placement Modes -->
+        <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Stone placement mode">
+          <button type="button" data-mode="alternate" title="Shortcut: A" class="mode-btn btn-active px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+            Alternate <kbd class="ml-1 opacity-60 font-sans">[A]</kbd>
+          </button>
+          <button type="button" data-mode="black" title="Shortcut: B" class="mode-btn px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-stone-900 inline-block"></span> Black <kbd class="opacity-60 font-sans">[B]</kbd>
+          </button>
+          <button type="button" data-mode="white" title="Shortcut: W" class="mode-btn px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-white border border-stone-400 inline-block"></span> White <kbd class="opacity-60 font-sans">[W]</kbd>
+          </button>
+          <button type="button" data-mode="erase" title="Shortcut: E" class="mode-btn px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+            Erase <kbd class="ml-1 opacity-60 font-sans">[E]</kbd>
+          </button>
+          <button type="button" data-mode="label" title="Shortcut: M" class="mode-btn px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+            Mark A/B/C <kbd class="ml-1 opacity-60 font-sans">[M]</kbd>
+          </button>
         </div>
 
-        <button type="button" id="btnUndo" title="Shortcut: Z" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 disabled:opacity-40 transition" disabled>
-          Undo [Z]
-        </button>
-        <button type="button" id="btnRedo" title="Shortcut: Y" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 disabled:opacity-40 transition" disabled>
-          Redo [Y]
-        </button>
-        <button type="button" id="btnNumbers" title="Shortcut: N" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition">
-          # Off [N]
-        </button>
-        <button type="button" id="btnCoords" title="Shortcut: C" class="btn-active px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition">
-          Coords [C]
-        </button>
-        <button type="button" id="btnCapture" title="Auto-capture stones with 0 liberties (Shortcut: K)" class="btn-active px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition">
-          Capture [K]
-        </button>
-        <button type="button" id="btnSound" title="Shortcut: S" class="btn-active px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition">
-          Sound [S]
-        </button>
-        <button type="button" id="btnClear" title="Shortcut: X (Undo with Z)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition">
-          Clear [X]
+        <!-- Board Size & Options -->
+        <div class="flex flex-wrap items-center gap-1.5">
+          <div class="flex items-center bg-stone-100 rounded-lg p-0.5 border border-stone-200">
+            <button type="button" data-size="9" class="size-btn px-2 py-1 rounded-md text-xs font-medium text-stone-600 hover:text-stone-900 transition">9×9</button>
+            <button type="button" data-size="13" class="size-btn px-2 py-1 rounded-md text-xs font-medium text-stone-600 hover:text-stone-900 transition">13×13</button>
+            <button type="button" data-size="19" class="size-btn btn-active px-2 py-1 rounded-md text-xs font-medium transition">19×19</button>
+          </div>
+
+          <button type="button" id="btnUndo" title="Shortcut: Z" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 disabled:opacity-40 transition" disabled>
+            Undo [Z]
+          </button>
+          <button type="button" id="btnRedo" title="Shortcut: Y" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 disabled:opacity-40 transition" disabled>
+            Redo [Y]
+          </button>
+          <button type="button" id="btnNumbers" title="Shortcut: N" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition">
+            # Off [N]
+          </button>
+          <button type="button" id="btnCoords" title="Shortcut: C" class="btn-active px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition">
+            Coords [C]
+          </button>
+          <button type="button" id="btnCapture" title="Auto-capture stones with 0 liberties (Shortcut: K)" class="btn-active px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition">
+            Capture [K]
+          </button>
+          <button type="button" id="btnSound" title="Shortcut: S" class="btn-active px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition">
+            Sound [S]
+          </button>
+          <button type="button" id="btnClear" title="Shortcut: X (Undo with Z)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition">
+            Clear [X]
+          </button>
+          <button type="button" id="btnOpenSaveModal" title="Save current board position to your Question Database (Shortcut: Q)" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition shadow-sm">
+            + Save as Question [Q]
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Loaded Question / Shape Banner (shown when practicing a saved question or shape) -->
+      <div id="activeStudyBar" class="hidden bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-2 text-amber-900">
+          <span class="font-semibold" id="activeStudyTitle">Loaded Position</span>
+          <span class="text-amber-700" id="activeStudySub"></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="btnResetBaseline" class="px-2.5 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">
+            Reset to Start Position [R]
+          </button>
+          <button type="button" id="btnExitStudy" class="px-2 py-1 rounded-lg font-medium text-amber-700 hover:text-amber-900 transition">
+            Dismiss
+          </button>
+        </div>
+      </div>
+
+      <!-- Goban Container -->
+      <div id="boardWrapper" class="w-full flex justify-center">
+        <div class="wood-frame rounded-xl p-2 sm:p-4 inline-block">
+          <canvas id="goban"></canvas>
+        </div>
+      </div>
+
+      <!-- Subtle Status / Toast -->
+      <div id="statusMsg" class="text-center text-xs text-stone-500 h-4">
+        Click any intersection to place a stone. Press [Q] or click "+ Save as Question" to store any board position into your Question Database.
+      </div>
+    </section>
+
+    <!-- ==========================================
+         MODULE 2: GO SHAPES (CLASSIC EYE SHAPES)
+         ========================================== -->
+    <section id="moduleShapes" class="hidden flex-col gap-4">
+      <!-- Quick Selector Bar -->
+      <div class="bg-white rounded-xl px-4 py-3 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <span class="text-xs font-semibold text-stone-700">Shape Library:</span>
+          <select id="shapeSelect" aria-label="Select classic Go eye shape" class="text-xs font-medium bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1.5 text-stone-800 focus:outline-none focus:border-stone-400">
+            <option value="straight3">直三 · Straight Three (Unsettled)</option>
+            <option value="bent3">曲三 · Bent Three (Unsettled)</option>
+            <option value="straight4">直四 · Straight Four (Alive)</option>
+            <option value="bent4">曲四 · Bent Four Open (Alive)</option>
+            <option value="corner_bent4">盤角曲四 · Bent Four in Corner (Ko/Dead)</option>
+            <option value="square4">方四 · Square Four (Dead)</option>
+            <option value="pyramid4">丁四 · Pyramid Four (Unsettled)</option>
+            <option value="bulky5">刀把五 · Bulky Five (Unsettled)</option>
+            <option value="flower5">梅花五 · Crossed Five (Unsettled)</option>
+            <option value="rabbity6">葡萄六 · Rabbity Six (Unsettled)</option>
+            <option value="rect6">板六 · Rectangular Six Open (Alive)</option>
+            <option value="corner_rect6">角部板六 · Rectangular Six Corner (0 Lib = Dead)</option>
+          </select>
+          <button type="button" id="btnLoadShape" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-900 text-white hover:bg-stone-700 transition">
+            Load Shape
+          </button>
+        </div>
+        <span id="shapeHint" class="text-xs text-stone-500">Select any classic eye shape card below to inspect its vital point or test it on the board.</span>
+      </div>
+
+      <!-- Visual Catalog Grid of All 12 Classic Shapes -->
+      <div id="shapesCatalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+    </section>
+
+    <!-- ==========================================
+         MODULE 3: QUESTION DATABASE (WITH FOLDERS)
+         ========================================== -->
+    <section id="moduleDatabase" class="hidden flex-col gap-4">
+      <!-- Top Database Action Bar -->
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-sm sm:text-base font-semibold text-stone-900">Personal Question Database</h2>
+          <p class="text-xs text-stone-500 mt-0.5">
+            Set up any stones on the Blank Board and click <strong>+ Save as Question [Q]</strong> to add problems and organize them into folders.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" id="btnGoToBoardFromDb" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-900 text-white hover:bg-stone-700 transition">
+            + Set Up New Question on Board
+          </button>
+          <button type="button" id="btnExportDb" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+            Export JSON
+          </button>
+          <label for="inputImportDb" class="cursor-pointer px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+            Import JSON
+          </label>
+          <input id="inputImportDb" type="file" accept=".json,application/json" class="hidden">
+        </div>
+      </div>
+
+      <!-- Main Database Layout: Folders Sidebar + Questions Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+        <!-- Folder Manager Sidebar -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Folders</span>
+            <span id="folderTotalCount" class="text-xs text-stone-400">0 folders</span>
+          </div>
+
+          <!-- Create New Folder Input -->
+          <div class="flex items-center gap-1.5">
+            <input id="newFolderInput" type="text" placeholder="New folder name..." class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-800 focus:outline-none focus:bg-white focus:border-stone-400">
+            <button type="button" id="btnCreateFolder" class="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-stone-900 text-white hover:bg-stone-700 transition">
+              Add
+            </button>
+          </div>
+
+          <!-- Folder List -->
+          <div id="folderList" class="flex flex-col gap-1"></div>
+        </div>
+
+        <!-- Questions Grid Area -->
+        <div class="md:col-span-3 flex flex-col gap-3">
+          <div class="bg-white rounded-xl px-4 py-2.5 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span id="currentFolderHeading" class="text-xs sm:text-sm font-semibold text-stone-800">All Questions</span>
+              <span id="currentFolderSubCount" class="text-xs text-stone-500">(0)</span>
+            </div>
+            <button type="button" id="btnDeleteCurrentFolder" class="hidden text-xs font-medium text-red-600 hover:text-red-800 transition">
+              Delete This Folder
+            </button>
+          </div>
+
+          <div id="questionsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==========================================
+       MODAL: SAVE CURRENT BOARD AS QUESTION
+       ========================================== -->
+  <div id="saveQuestionModal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl border border-stone-200 flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-semibold text-stone-900">Save Board Position as Question</h3>
+        <button type="button" id="btnCloseSaveModal" class="text-stone-400 hover:text-stone-700 text-sm font-semibold px-2 py-0.5 rounded">
+          ✕
         </button>
       </div>
-    </div>
 
-    <!-- Classic Eye Shapes Module -->
-    <div class="bg-white rounded-xl px-3 py-2 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-2">
-      <div class="flex items-center gap-2 flex-wrap">
-        <span class="text-xs font-semibold text-stone-700">Shape Library:</span>
-        <select id="shapeSelect" aria-label="Select classic Go eye shape" class="text-xs font-medium bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1.5 text-stone-800 focus:outline-none focus:border-stone-400">
-          <option value="straight3">直三 · Straight Three (Unsettled)</option>
-          <option value="bent3">曲三 · Bent Three (Unsettled)</option>
-          <option value="straight4">直四 · Straight Four (Alive)</option>
-          <option value="bent4">曲四 · Bent Four Open (Alive)</option>
-          <option value="corner_bent4">盤角曲四 · Bent Four in Corner (Ko/Dead)</option>
-          <option value="square4">方四 · Square Four (Dead)</option>
-          <option value="pyramid4">丁四 · Pyramid Four (Unsettled)</option>
-          <option value="bulky5">刀把五 · Bulky Five (Unsettled)</option>
-          <option value="flower5">梅花五 · Crossed Five (Unsettled)</option>
-          <option value="rabbity6">葡萄六 · Rabbity Six (Unsettled)</option>
-          <option value="rect6">板六 · Rectangular Six Open (Alive)</option>
-          <option value="corner_rect6">角部板六 · Rectangular Six Corner (0 Lib = Dead)</option>
-        </select>
-        <button type="button" id="btnLoadShape" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-900 text-white hover:bg-stone-700 transition">
-          Load Shape
+      <div class="flex flex-col gap-3 text-xs">
+        <div>
+          <label for="qTitleInput" class="block font-medium text-stone-700 mb-1">Question Title</label>
+          <input id="qTitleInput" type="text" placeholder="e.g., Corner L-Group Life &amp; Death #1" class="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label for="qFolderSelect" class="block font-medium text-stone-700 mb-1">Folder</label>
+            <select id="qFolderSelect" class="w-full px-2.5 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400"></select>
+          </div>
+          <div>
+            <label for="qFirstTurnSelect" class="block font-medium text-stone-700 mb-1">First to Play</label>
+            <select id="qFirstTurnSelect" class="w-full px-2.5 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
+              <option value="1">Black to play</option>
+              <option value="2">White to play</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="qNewFolderModalInput" class="block font-medium text-stone-700 mb-1">Or Create a New Folder (Optional)</label>
+          <div class="flex items-center gap-1.5">
+            <input id="qNewFolderModalInput" type="text" placeholder="Type new folder name..." class="w-full px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
+            <button type="button" id="btnAddFolderInModal" class="shrink-0 px-2.5 py-1.5 rounded-lg font-medium bg-stone-200 text-stone-800 hover:bg-stone-300 transition">
+              + Folder
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label for="qNotesInput" class="block font-medium text-stone-700 mb-1">Goal / Notes (Optional)</label>
+          <textarea id="qNotesInput" rows="2" placeholder="e.g., Black to play and live, or find the vital point..." class="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400"></textarea>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button type="button" id="btnCancelSaveModal" class="px-3.5 py-2 rounded-lg text-xs font-medium border border-stone-200 text-stone-700 hover:bg-stone-50 transition">
+          Cancel
+        </button>
+        <button type="button" id="btnConfirmSaveQuestion" class="px-4 py-2 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
+          Save Question
         </button>
       </div>
-      <span id="shapeHint" class="text-xs text-stone-500">Pick any shape to place it on a 9×9 board for instant study.</span>
-    </div>
-
-    <!-- Goban Container -->
-    <div id="boardWrapper" class="w-full flex justify-center">
-      <div class="wood-frame rounded-xl p-2 sm:p-4 inline-block">
-        <canvas id="goban"></canvas>
-      </div>
-    </div>
-
-    <!-- Subtle Status / Toast -->
-    <div id="statusMsg" class="text-center text-xs text-stone-500 h-4">
-      Click any intersection to place a stone. Switch modes above to freely set up Black, White, or A/B/C markers.
     </div>
   </div>
 
   <script>
     (() => {
+      // DOM Elements — Board
       const canvas = document.getElementById('goban');
       const ctx = canvas.getContext('2d');
       const boardWrapper = document.getElementById('boardWrapper');
@@ -169,12 +349,54 @@
       const btnCapture = document.getElementById('btnCapture');
       const btnSound = document.getElementById('btnSound');
       const btnClear = document.getElementById('btnClear');
+
+      // Active Study Baseline Banner
+      const activeStudyBar = document.getElementById('activeStudyBar');
+      const activeStudyTitle = document.getElementById('activeStudyTitle');
+      const activeStudySub = document.getElementById('activeStudySub');
+      const btnResetBaseline = document.getElementById('btnResetBaseline');
+      const btnExitStudy = document.getElementById('btnExitStudy');
+
+      // Module containers
+      const moduleBoard = document.getElementById('moduleBoard');
+      const moduleShapes = document.getElementById('moduleShapes');
+      const moduleDatabase = document.getElementById('moduleDatabase');
+      const dbCountBadge = document.getElementById('dbCountBadge');
+
+      // Module 2: Go Shapes
       const shapeSelect = document.getElementById('shapeSelect');
       const btnLoadShape = document.getElementById('btnLoadShape');
       const shapeHintEl = document.getElementById('shapeHint');
+      const shapesCatalogGrid = document.getElementById('shapesCatalogGrid');
 
-      const COLS = 'ABCDEFGHJKLMNOPQRST'; // Standard Go coordinates (skips 'I')
+      // Module 3: Question Database & Modal
+      const btnOpenSaveModal = document.getElementById('btnOpenSaveModal');
+      const saveQuestionModal = document.getElementById('saveQuestionModal');
+      const btnCloseSaveModal = document.getElementById('btnCloseSaveModal');
+      const btnCancelSaveModal = document.getElementById('btnCancelSaveModal');
+      const btnConfirmSaveQuestion = document.getElementById('btnConfirmSaveQuestion');
+      const qTitleInput = document.getElementById('qTitleInput');
+      const qFolderSelect = document.getElementById('qFolderSelect');
+      const qFirstTurnSelect = document.getElementById('qFirstTurnSelect');
+      const qNewFolderModalInput = document.getElementById('qNewFolderModalInput');
+      const btnAddFolderInModal = document.getElementById('btnAddFolderInModal');
+      const qNotesInput = document.getElementById('qNotesInput');
 
+      const newFolderInput = document.getElementById('newFolderInput');
+      const btnCreateFolder = document.getElementById('btnCreateFolder');
+      const folderListEl = document.getElementById('folderList');
+      const folderTotalCountEl = document.getElementById('folderTotalCount');
+      const currentFolderHeading = document.getElementById('currentFolderHeading');
+      const currentFolderSubCount = document.getElementById('currentFolderSubCount');
+      const btnDeleteCurrentFolder = document.getElementById('btnDeleteCurrentFolder');
+      const questionsGrid = document.getElementById('questionsGrid');
+      const btnGoToBoardFromDb = document.getElementById('btnGoToBoardFromDb');
+      const btnExportDb = document.getElementById('btnExportDb');
+      const inputImportDb = document.getElementById('inputImportDb');
+
+      const COLS = 'ABCDEFGHJKLMNOPQRST'; // Skips 'I'
+
+      let activeTab = 'board'; // 'board' | 'shapes' | 'database'
       let boardSize = 19;
       let mode = 'alternate'; // 'alternate' | 'black' | 'white' | 'erase' | 'label'
       let nextColor = 1; // 1 = Black, 2 = White
@@ -185,21 +407,77 @@
 
       let board = [];
       let moveNums = [];
-      let labels = {}; // key "x,y" -> "A", "B", ...
-      let lastMove = null; // { x, y }
-      let blackCaptured = 0; // Black stones captured
-      let whiteCaptured = 0; // White stones captured
+      let labels = {};
+      let lastMove = null;
+      let blackCaptured = 0;
+      let whiteCaptured = 0;
       let moveCounter = 0;
 
       let history = [];
       let redoStack = [];
       let hoverPos = null;
       let audioCtx = null;
+      let studyBaseline = null; // Stores starting snapshot when studying a shape or saved question
 
-      // Layout metrics updated on resize
       let canvasSize = 560;
       let margin = 28;
       let cell = 28;
+
+      // Database state (Starts empty as requested, persisted in localStorage)
+      const STORAGE_QUESTIONS_KEY = 'go_study_questions_v1';
+      const STORAGE_FOLDERS_KEY = 'go_study_folders_v1';
+      let folders = [];
+      let questions = [];
+      let selectedFolderFilter = '__ALL__'; // '__ALL__' | '__UNCATEGORIZED__' | folderName
+
+      function loadDatabaseFromStorage() {
+        try {
+          const rawF = localStorage.getItem(STORAGE_FOLDERS_KEY);
+          const rawQ = localStorage.getItem(STORAGE_QUESTIONS_KEY);
+          folders = rawF ? JSON.parse(rawF) : [];
+          questions = rawQ ? JSON.parse(rawQ) : [];
+          if (!Array.isArray(folders)) folders = [];
+          if (!Array.isArray(questions)) questions = [];
+        } catch (_) {
+          folders = [];
+          questions = [];
+        }
+      }
+
+      function saveDatabaseToStorage() {
+        try {
+          localStorage.setItem(STORAGE_FOLDERS_KEY, JSON.stringify(folders));
+          localStorage.setItem(STORAGE_QUESTIONS_KEY, JSON.stringify(questions));
+        } catch (_) {}
+      }
+
+      function switchTab(tabName) {
+        activeTab = tabName;
+        document.querySelectorAll('.module-tab').forEach(btn => {
+          btn.classList.toggle('tab-active', btn.dataset.tab === tabName);
+        });
+        moduleBoard.classList.toggle('hidden', tabName !== 'board');
+        moduleBoard.classList.toggle('flex', tabName === 'board');
+
+        moduleShapes.classList.toggle('hidden', tabName !== 'shapes');
+        moduleShapes.classList.toggle('flex', tabName === 'shapes');
+
+        moduleDatabase.classList.toggle('hidden', tabName !== 'database');
+        moduleDatabase.classList.toggle('flex', tabName === 'database');
+
+        if (tabName === 'board') {
+          resizeCanvas();
+          draw();
+        } else if (tabName === 'shapes') {
+          renderShapesCatalog();
+        } else if (tabName === 'database') {
+          renderDatabase();
+        }
+      }
+
+      document.querySelectorAll('.module-tab').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
 
       function initAudio() {
         if (!audioCtx && (window.AudioContext || window.webkitAudioContext)) {
@@ -236,8 +514,15 @@
         return Array.from({ length: n }, () => Array(n).fill(0));
       }
 
-      function resetState(newSize = boardSize) {
+      function syncSizeButtons(sz) {
+        document.querySelectorAll('.size-btn').forEach(b => {
+          b.classList.toggle('btn-active', parseInt(b.dataset.size, 10) === sz);
+        });
+      }
+
+      function resetState(newSize = boardSize, clearBaseline = true) {
         boardSize = newSize;
+        syncSizeButtons(boardSize);
         board = createEmptyBoard(boardSize);
         moveNums = createEmptyBoard(boardSize);
         labels = {};
@@ -249,6 +534,10 @@
         history = [];
         redoStack = [];
         hoverPos = null;
+        if (clearBaseline) {
+          studyBaseline = null;
+          activeStudyBar.classList.add('hidden');
+        }
         resizeCanvas();
         updateUI();
         draw();
@@ -256,6 +545,7 @@
 
       function cloneState() {
         return {
+          boardSize,
           board: board.map(r => [...r]),
           moveNums: moveNums.map(r => [...r]),
           labels: { ...labels },
@@ -268,14 +558,19 @@
       }
 
       function restoreState(s) {
+        if (s.boardSize && s.boardSize !== boardSize) {
+          boardSize = s.boardSize;
+          syncSizeButtons(boardSize);
+          resizeCanvas();
+        }
         board = s.board.map(r => [...r]);
-        moveNums = s.moveNums.map(r => [...r]);
-        labels = { ...s.labels };
+        moveNums = s.moveNums ? s.moveNums.map(r => [...r]) : createEmptyBoard(boardSize);
+        labels = { ...(s.labels || {}) };
         lastMove = s.lastMove ? { ...s.lastMove } : null;
-        nextColor = s.nextColor;
-        blackCaptured = s.blackCaptured;
-        whiteCaptured = s.whiteCaptured;
-        moveCounter = s.moveCounter;
+        nextColor = s.nextColor || 1;
+        blackCaptured = s.blackCaptured || 0;
+        whiteCaptured = s.whiteCaptured || 0;
+        moveCounter = s.moveCounter || 0;
         updateUI();
         draw();
       }
@@ -342,7 +637,7 @@
           }
           const selfGrp = getGroupAndLiberties(x, y, testBoard);
           if (selfGrp.liberties === 0 && capturedStones.length === 0) {
-            showStatus('Suicide move blocked (disable Capture to force placement).');
+            showStatus('Suicide move blocked (disable Capture [K] to force placement).');
             return false;
           }
         }
@@ -375,7 +670,7 @@
           const ch = String.fromCharCode(65 + i);
           if (!used.has(ch)) return ch;
         }
-        return '★';
+        return 'A';
       }
 
       function handleBoardClick(x, y) {
@@ -425,7 +720,6 @@
           return;
         }
 
-        // Alternate mode
         if (board[y][x] === 0) {
           placeStone(x, y, nextColor);
         }
@@ -451,6 +745,7 @@
         blackCapsEl.textContent = blackCaptured;
         whiteCapsEl.textContent = whiteCaptured;
         moveCountEl.textContent = moveCounter;
+        dbCountBadge.textContent = String(questions.length);
 
         btnUndo.disabled = history.length === 0;
         btnRedo.disabled = redoStack.length === 0;
@@ -468,18 +763,15 @@
           for (const x of pts) for (const y of pts) res.push([x, y]);
           return res;
         }
-        if (n === 13) {
-          return [[3,3],[9,3],[6,6],[3,9],[9,9]];
-        }
-        if (n === 9) {
-          return [[2,2],[6,2],[4,4],[2,6],[6,6]];
-        }
+        if (n === 13) return [[3,3],[9,3],[6,6],[3,9],[9,9]];
+        if (n === 9) return [[2,2],[6,2],[4,4],[2,6],[6,6]];
         return [];
       }
 
       function resizeCanvas() {
-        const availW = Math.min(boardWrapper.clientWidth - 36, 620);
-        const availH = Math.max(280, window.innerHeight - 230);
+        const wrapW = boardWrapper.clientWidth || 600;
+        const availW = Math.min(wrapW - 36, 620);
+        const availH = Math.max(280, window.innerHeight - 245);
         canvasSize = Math.max(260, Math.min(availW, availH, 600));
 
         const dpr = window.devicePixelRatio || 1;
@@ -496,11 +788,9 @@
       function draw() {
         ctx.clearRect(0, 0, canvasSize, canvasSize);
 
-        // Subtle wood texture tint
         ctx.fillStyle = '#dfb164';
         ctx.fillRect(0, 0, canvasSize, canvasSize);
 
-        // Grid lines
         ctx.strokeStyle = '#3b2b13';
         ctx.lineWidth = 1;
         const end = margin + (boardSize - 1) * cell;
@@ -518,11 +808,9 @@
           ctx.stroke();
         }
 
-        // Outer border slightly thicker
         ctx.lineWidth = 1.6;
         ctx.strokeRect(margin, margin, end - margin, end - margin);
 
-        // Star points (hoshi)
         ctx.fillStyle = '#3b2b13';
         const starR = Math.max(2.2, cell * 0.11);
         for (const [sx, sy] of getStarPoints(boardSize)) {
@@ -531,7 +819,6 @@
           ctx.fill();
         }
 
-        // Coordinates
         if (showCoords) {
           ctx.fillStyle = '#4a3516';
           const fontSize = Math.max(9, Math.min(12, cell * 0.42));
@@ -552,10 +839,9 @@
 
         const stoneR = cell * 0.47;
 
-        // Hover preview
         if (hoverPos && mode !== 'erase' && mode !== 'label') {
           const { x, y } = hoverPos;
-          if (board[y][x] === 0) {
+          if (board[y] && board[y][x] === 0) {
             const previewColor = mode === 'white' ? 2 : (mode === 'black' ? 1 : nextColor);
             ctx.save();
             ctx.globalAlpha = 0.42;
@@ -564,7 +850,6 @@
           }
         }
 
-        // Stones
         for (let y = 0; y < boardSize; y++) {
           for (let x = 0; x < boardSize; x++) {
             const c = board[y][x];
@@ -591,7 +876,6 @@
           }
         }
 
-        // Custom A/B/C markers
         for (const [key, ch] of Object.entries(labels)) {
           const [lx, ly] = key.split(',').map(Number);
           if (lx >= boardSize || ly >= boardSize) continue;
@@ -676,22 +960,22 @@
         if (pos) handleBoardClick(pos.x, pos.y);
       });
 
-      // Mode buttons
+      function setMode(nextMode) {
+        const target = document.querySelector(`.mode-btn[data-mode="${nextMode}"]`);
+        if (!target) return;
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('btn-active'));
+        target.classList.add('btn-active');
+        mode = nextMode;
+        updateUI();
+        draw();
+      }
+
       document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('btn-active'));
-          btn.classList.add('btn-active');
-          mode = btn.dataset.mode;
-          updateUI();
-          draw();
-        });
+        btn.addEventListener('click', () => setMode(btn.dataset.mode));
       });
 
-      // Size buttons
       document.querySelectorAll('.size-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('btn-active'));
-          btn.classList.add('btn-active');
           resetState(parseInt(btn.dataset.size, 10));
           showStatus(`Switched to a blank ${boardSize}×${boardSize} board.`);
         });
@@ -746,52 +1030,36 @@
         blackCaptured = 0;
         whiteCaptured = 0;
         moveCounter = 0;
+        studyBaseline = null;
+        activeStudyBar.classList.add('hidden');
         updateUI();
         draw();
         showStatus('Cleared the board.');
       });
 
-      window.addEventListener('resize', () => {
-        resizeCanvas();
-        draw();
+      btnResetBaseline.addEventListener('click', () => {
+        if (!studyBaseline) return;
+        pushHistory();
+        restoreState(studyBaseline.snapshot);
+        setMode('alternate');
+        showStatus(`Reset to starting position: ${studyBaseline.title}`);
       });
 
-      function setMode(nextMode) {
-        const target = document.querySelector(`.mode-btn[data-mode="${nextMode}"]`);
-        if (!target) return;
-        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('btn-active'));
-        target.classList.add('btn-active');
-        mode = nextMode;
-        updateUI();
-        draw();
-      }
-
-      window.addEventListener('keydown', (e) => {
-        if (e.ctrlKey || e.metaKey || e.altKey) return;
-        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-        const k = e.key.toLowerCase();
-        if (k === 'a') { setMode('alternate'); }
-        else if (k === 'b') { setMode('black'); }
-        else if (k === 'w') { setMode('white'); }
-        else if (k === 'e') { setMode('erase'); }
-        else if (k === 'm') { setMode('label'); }
-        else if (k === 'z') { btnUndo.click(); }
-        else if (k === 'y') { btnRedo.click(); }
-        else if (k === 'n') { btnNumbers.click(); }
-        else if (k === 'c') { btnCoords.click(); }
-        else if (k === 'k') { btnCapture.click(); }
-        else if (k === 's') { btnSound.click(); }
-        else if (k === 'x') { btnClear.click(); }
+      btnExitStudy.addEventListener('click', () => {
+        studyBaseline = null;
+        activeStudyBar.classList.add('hidden');
       });
 
-      function buildSealedShape(eyeCells, cornerMode = false) {
+      // ==========================================
+      // MODULE 2: CLASSIC GO SHAPES LOGIC
+      // ==========================================
+      function buildSealedShape(eyeCells) {
         const eyeSet = new Set(eyeCells.map(([x, y]) => `${x},${y}`));
         const blackSet = new Set();
         const whiteSet = new Set();
         const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
-
-        // Surround eye cells with 8-connected Black stones (including diagonals so no false eyes)
         const dirs8 = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+
         for (const [ex, ey] of eyeCells) {
           for (const [dx, dy] of dirs8) {
             const nx = ex + dx, ny = ey + dy;
@@ -801,7 +1069,6 @@
           }
         }
 
-        // Surround Black stones with White stones so Black has 0 outside liberties
         for (const bKey of blackSet) {
           const [bx, by] = bKey.split(',').map(Number);
           for (const [dx, dy] of dirs) {
@@ -819,82 +1086,566 @@
 
       const SHAPE_PRESETS = {
         straight3: {
+          name: '直三 · Straight Three',
+          status: 'Unsettled (先手活 / 後手死)',
+          badgeClass: 'bg-amber-100 text-amber-900 border-amber-200',
+          vital: [3, 2],
+          vitalLabel: 'D7',
           eye: [[2,2],[3,2],[4,2]],
           hint: '直三 (Straight Three): Whoever plays D7 (center) wins.'
         },
         bent3: {
+          name: '曲三 · Bent Three',
+          status: 'Unsettled (先手活 / 後手死)',
+          badgeClass: 'bg-amber-100 text-amber-900 border-amber-200',
+          vital: [2, 2],
+          vitalLabel: 'C7',
           eye: [[2,2],[3,2],[2,3]],
-          hint: '曲三 (Bent Three): Whoever plays C7 (bend) wins.'
+          hint: '曲三 (Bent Three): Whoever plays C7 (corner of the bend) wins.'
         },
         straight4: {
+          name: '直四 · Straight Four',
+          status: 'Always Alive (兩點見合)',
+          badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-200',
+          vital: [3, 2],
+          vitalLabel: 'D7 / E7 (Miai)',
           eye: [[2,2],[3,2],[4,2],[5,2]],
           hint: '直四 (Straight Four): Always alive — D7 and E7 are miai.'
         },
         bent4: {
+          name: '曲四 · Bent Four (Open)',
+          status: 'Always Alive (兩點見合)',
+          badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-200',
+          vital: [2, 2],
+          vitalLabel: 'C7 / D7 (Miai)',
           eye: [[2,2],[3,2],[4,2],[2,3]],
           hint: '曲四 (Bent Four Open): Always alive — C7 and D7 are miai.'
         },
         corner_bent4: {
+          name: '盤角曲四 · Bent Four in Corner',
+          status: 'Ko or Dead (劫盡棋亡)',
+          badgeClass: 'bg-rose-100 text-rose-900 border-rose-200',
+          vital: [1, 0],
+          vitalLabel: 'B9 (2-1 Point)',
           eye: [[0,0],[1,0],[2,0],[0,1]],
           hint: '盤角曲四 (Bent Four in Corner): White B9 -> Black A9 -> White A8 (Ko).'
         },
         square4: {
+          name: '方四 · Square Four',
+          status: 'Always Dead (無條件死)',
+          badgeClass: 'bg-rose-100 text-rose-900 border-rose-200',
+          vital: null,
+          vitalLabel: 'None (Dead)',
           eye: [[2,2],[3,2],[2,3],[3,3]],
           hint: '方四 (Square Four): Always dead regardless of who moves first.'
         },
         pyramid4: {
+          name: '丁四 · Pyramid Four',
+          status: 'Unsettled (先手活 / 後手死)',
+          badgeClass: 'bg-amber-100 text-amber-900 border-amber-200',
+          vital: [3, 2],
+          vitalLabel: 'D7 (T-Junction)',
           eye: [[3,1],[2,2],[3,2],[4,2]],
           hint: '丁四 (Pyramid Four): Whoever plays D7 (T-junction) wins.'
         },
         bulky5: {
+          name: '刀把五 · Bulky Five',
+          status: 'Unsettled (先手活 / 後手死)',
+          badgeClass: 'bg-amber-100 text-amber-900 border-amber-200',
+          vital: [3, 2],
+          vitalLabel: 'D7 (Junction)',
           eye: [[2,1],[3,1],[2,2],[3,2],[4,2]],
           hint: '刀把五 (Bulky Five): Whoever plays D7 (junction) wins.'
         },
         flower5: {
+          name: '梅花五 · Crossed Five',
+          status: 'Unsettled (先手活 / 後手死)',
+          badgeClass: 'bg-amber-100 text-amber-900 border-amber-200',
+          vital: [3, 2],
+          vitalLabel: 'D7 (Center)',
           eye: [[3,1],[2,2],[3,2],[4,2],[3,3]],
           hint: '梅花五 (Crossed Five): Whoever plays D7 (center) wins.'
         },
         rabbity6: {
-          eye: [[2,1],[3,1],[2,2],[3,2],[4,2],[2,3]],
-          hint: '葡萄六 (Rabbity Six): Whoever plays C7 (central nexus) wins.'
+          name: '葡萄六 · Rabbity Six',
+          status: 'Unsettled (先手活 / 後手死)',
+          badgeClass: 'bg-amber-100 text-amber-900 border-amber-200',
+          vital: [3, 2],
+          vitalLabel: 'D7 (Nexus)',
+          eye: [[2,1],[3,1],[2,2],[3,2],[4,2],[3,3]],
+          hint: '葡萄六 (Rabbity Six): Whoever plays D7 (central nexus) wins.'
         },
         rect6: {
+          name: '板六 · Rectangular Six (Open)',
+          status: 'Always Alive (兩點見合)',
+          badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-200',
+          vital: [3, 2],
+          vitalLabel: 'D7 / D6 (Miai)',
           eye: [[2,2],[3,2],[4,2],[2,3],[3,3],[4,3]],
           hint: '板六 (Rectangular Six Open): Always alive — D7 and D6 are miai.'
         },
         corner_rect6: {
+          name: '角部板六 · Corner Rectangular Six',
+          status: '0 Outside Lib = Dead',
+          badgeClass: 'bg-rose-100 text-rose-900 border-rose-200',
+          vital: [1, 1],
+          vitalLabel: 'B8 (2-2 Point)',
           eye: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]],
           hint: '角部板六 (Corner Rect Six): 0 outside liberties — White B8 kills.'
         }
       };
 
-      function loadPresetShape(key) {
+      function renderMiniBoardSvg(boardArr, size, labelsMap = {}, vitalPt = null) {
+        const svgW = 156;
+        const pad = 12;
+        const step = (svgW - 2 * pad) / (size - 1);
+        const r = Math.max(3, step * 0.44);
+        let out = `<svg viewBox="0 0 ${svgW} ${svgW}" class="w-36 h-36 rounded-lg border border-amber-300 shadow-inner" style="background:#dfb164" xmlns="http://www.w3.org/2000/svg">`;
+
+        const end = pad + (size - 1) * step;
+        for (let i = 0; i < size; i++) {
+          const pos = (pad + i * step).toFixed(1);
+          out += `<line x1="${pad}" y1="${pos}" x2="${end}" y2="${pos}" stroke="#4a3516" stroke-width="0.8"/>`;
+          out += `<line x1="${pos}" y1="${pad}" x2="${pos}" y2="${end}" stroke="#4a3516" stroke-width="0.8"/>`;
+        }
+
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            const c = boardArr[y] ? boardArr[y][x] : 0;
+            if (c !== 0) {
+              const cx = (pad + x * step).toFixed(1);
+              const cy = (pad + y * step).toFixed(1);
+              const fill = c === 1 ? '#1c1c1c' : '#ffffff';
+              out += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="${fill}" stroke="#3b2b13" stroke-width="0.8"/>`;
+            }
+          }
+        }
+
+        if (vitalPt) {
+          const vx = (pad + vitalPt[0] * step).toFixed(1);
+          const vy = (pad + vitalPt[1] * step).toFixed(1);
+          out += `<circle cx="${vx}" cy="${vy}" r="${(r * 0.72).toFixed(1)}" fill="#2563eb" stroke="#ffffff" stroke-width="1"/>`;
+        }
+
+        for (const [k, ch] of Object.entries(labelsMap || {})) {
+          const [lx, ly] = k.split(',').map(Number);
+          if (lx < size && ly < size) {
+            const cx = (pad + lx * step).toFixed(1);
+            const cy = (pad + ly * step + 3).toFixed(1);
+            const onStone = boardArr[ly] ? boardArr[ly][lx] : 0;
+            const col = onStone === 1 ? '#ffffff' : '#1f2937';
+            out += `<text x="${cx}" y="${cy}" font-size="9" font-weight="700" text-anchor="middle" fill="${col}">${ch}</text>`;
+          }
+        }
+
+        out += '</svg>';
+        return out;
+      }
+
+      function renderShapesCatalog() {
+        shapesCatalogGrid.innerHTML = Object.entries(SHAPE_PRESETS).map(([key, item]) => {
+          const { black, white } = buildSealedShape(item.eye);
+          const tempB = createEmptyBoard(9);
+          for (const [bx, by] of black) if (bx < 9 && by < 9) tempB[by][bx] = 1;
+          for (const [wx, wy] of white) if (wx < 9 && wy < 9) tempB[wy][wx] = 2;
+          const svgThumb = renderMiniBoardSvg(tempB, 9, {}, item.vital);
+
+          return `
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-stone-200 flex flex-col justify-between gap-3 hover:border-stone-400 transition">
+              <div class="flex flex-col gap-2">
+                <div class="flex items-start justify-between gap-2">
+                  <h3 class="text-sm font-semibold text-stone-900">${item.name}</h3>
+                  <span class="text-[11px] font-medium px-2 py-0.5 rounded-full border ${item.badgeClass}">${item.status}</span>
+                </div>
+                <div class="flex items-center gap-3 my-1">
+                  <div class="shrink-0">${svgThumb}</div>
+                  <div class="flex flex-col gap-1.5 text-xs text-stone-600">
+                    <div><span class="font-semibold text-stone-800">Vital Point:</span> ${item.vitalLabel}</div>
+                    <p class="leading-relaxed text-stone-500">${item.hint}</p>
+                  </div>
+                </div>
+              </div>
+              <button type="button" data-load-shape="${key}" class="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
+                Practice Shape on Board &rarr;
+              </button>
+            </div>
+          `;
+        }).join('');
+
+        shapesCatalogGrid.querySelectorAll('[data-load-shape]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const k = btn.getAttribute('data-load-shape');
+            shapeSelect.value = k;
+            loadPresetShape(k, true);
+          });
+        });
+      }
+
+      function loadPresetShape(key, switchToBoard = true) {
         const preset = SHAPE_PRESETS[key];
         if (!preset) return;
         const { black, white } = buildSealedShape(preset.eye);
 
-        // Switch to 9x9 for clean eye-shape study
-        document.querySelectorAll('.size-btn').forEach(b => {
-          b.classList.toggle('btn-active', b.dataset.size === '9');
-        });
-        resetState(9);
-        for (const [bx, by] of black) board[by][bx] = 1;
-        for (const [wx, wy] of white) board[wy][wx] = 2;
+        resetState(9, false);
+        for (const [bx, by] of black) if (bx < 9 && by < 9) board[by][bx] = 1;
+        for (const [wx, wy] of white) if (wx < 9 && wy < 9) board[wy][wx] = 2;
 
-        // Set Alternate mode with White to attack first
         setMode('alternate');
         nextColor = 2;
+        studyBaseline = {
+          title: preset.name,
+          subtitle: `Vital Point: ${preset.vitalLabel}`,
+          snapshot: cloneState()
+        };
+        activeStudyTitle.textContent = `Shape: ${preset.name}`;
+        activeStudySub.textContent = `(${preset.hint})`;
+        activeStudyBar.classList.remove('hidden');
+
         shapeHintEl.textContent = preset.hint;
         showStatus(preset.hint);
+        if (switchToBoard) switchTab('board');
         updateUI();
         draw();
       }
 
-      btnLoadShape.addEventListener('click', () => loadPresetShape(shapeSelect.value));
-      shapeSelect.addEventListener('change', () => loadPresetShape(shapeSelect.value));
+      btnLoadShape.addEventListener('click', () => loadPresetShape(shapeSelect.value, true));
+      shapeSelect.addEventListener('change', () => loadPresetShape(shapeSelect.value, false));
+
+      // ==========================================
+      // MODULE 3: QUESTION DATABASE & FOLDERS
+      // ==========================================
+      function populateFolderSelectModal() {
+        let html = `<option value="">Uncategorized</option>`;
+        for (const f of folders) {
+          const esc = f.replace(/"/g, '&quot;');
+          const sel = (selectedFolderFilter === f) ? 'selected' : '';
+          html += `<option value="${esc}" ${sel}>${f}</option>`;
+        }
+        qFolderSelect.innerHTML = html;
+      }
+
+      function openSaveQuestionModal() {
+        populateFolderSelectModal();
+        qTitleInput.value = `Question #${questions.length + 1}`;
+        qFirstTurnSelect.value = String(nextColor);
+        qNewFolderModalInput.value = '';
+        qNotesInput.value = '';
+        saveQuestionModal.classList.remove('hidden');
+        qTitleInput.focus();
+      }
+
+      function closeSaveQuestionModal() {
+        saveQuestionModal.classList.add('hidden');
+      }
+
+      btnOpenSaveModal.addEventListener('click', openSaveQuestionModal);
+      btnCloseSaveModal.addEventListener('click', closeSaveQuestionModal);
+      btnCancelSaveModal.addEventListener('click', closeSaveQuestionModal);
+
+      btnAddFolderInModal.addEventListener('click', () => {
+        const name = qNewFolderModalInput.value.trim();
+        if (!name) return;
+        if (!folders.includes(name)) {
+          folders.push(name);
+          saveDatabaseToStorage();
+        }
+        selectedFolderFilter = name;
+        populateFolderSelectModal();
+        qFolderSelect.value = name;
+        qNewFolderModalInput.value = '';
+      });
+
+      btnConfirmSaveQuestion.addEventListener('click', () => {
+        const title = qTitleInput.value.trim() || `Question #${questions.length + 1}`;
+        const pendingNewFolder = qNewFolderModalInput.value.trim();
+        let folder = qFolderSelect.value;
+        if (pendingNewFolder) {
+          if (!folders.includes(pendingNewFolder)) folders.push(pendingNewFolder);
+          folder = pendingNewFolder;
+        }
+        const firstTurn = parseInt(qFirstTurnSelect.value, 10) || 1;
+        const notes = qNotesInput.value.trim();
+
+        const newQuestion = {
+          id: 'q_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          title,
+          folder,
+          firstTurn,
+          notes,
+          boardSize,
+          board: board.map(r => [...r]),
+          labels: { ...labels },
+          createdAt: new Date().toLocaleDateString()
+        };
+
+        questions.unshift(newQuestion);
+        saveDatabaseToStorage();
+        closeSaveQuestionModal();
+        updateUI();
+        showStatus(`Saved "${title}" into ${folder ? `folder "${folder}"` : 'Question Database'}.`);
+      });
+
+      function createNewFolderFromSidebar() {
+        const name = newFolderInput.value.trim();
+        if (!name) return;
+        if (!folders.includes(name)) {
+          folders.push(name);
+          saveDatabaseToStorage();
+        }
+        newFolderInput.value = '';
+        selectedFolderFilter = name;
+        renderDatabase();
+      }
+
+      btnCreateFolder.addEventListener('click', createNewFolderFromSidebar);
+      newFolderInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') createNewFolderFromSidebar();
+      });
+
+      btnDeleteCurrentFolder.addEventListener('click', () => {
+        if (selectedFolderFilter === '__ALL__' || selectedFolderFilter === '__UNCATEGORIZED__') return;
+        const target = selectedFolderFilter;
+        folders = folders.filter(f => f !== target);
+        questions.forEach(q => {
+          if (q.folder === target) q.folder = '';
+        });
+        selectedFolderFilter = '__ALL__';
+        saveDatabaseToStorage();
+        renderDatabase();
+      });
+
+      btnGoToBoardFromDb.addEventListener('click', () => {
+        switchTab('board');
+      });
+
+      btnExportDb.addEventListener('click', () => {
+        const payload = JSON.stringify({ folders, questions }, null, 2);
+        const blob = new Blob([payload], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'go_questions_database.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+
+      inputImportDb.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(reader.result);
+            if (Array.isArray(parsed.folders)) {
+              parsed.folders.forEach(f => {
+                if (typeof f === 'string' && f && !folders.includes(f)) folders.push(f);
+              });
+            }
+            if (Array.isArray(parsed.questions)) {
+              questions = [...parsed.questions, ...questions];
+            }
+            saveDatabaseToStorage();
+            updateUI();
+            renderDatabase();
+          } catch (_) {}
+        };
+        reader.readAsText(file);
+        inputImportDb.value = '';
+      });
+
+      function loadQuestionToBoard(qId) {
+        const q = questions.find(item => item.id === qId);
+        if (!q) return;
+        resetState(q.boardSize || 19, false);
+        board = q.board.map(r => [...r]);
+        labels = { ...(q.labels || {}) };
+        nextColor = q.firstTurn || 1;
+        setMode('alternate');
+
+        studyBaseline = {
+          title: q.title,
+          subtitle: q.notes || (nextColor === 1 ? 'Black to play' : 'White to play'),
+          snapshot: cloneState()
+        };
+        activeStudyTitle.textContent = `Question: ${q.title}`;
+        activeStudySub.textContent = q.notes ? `— ${q.notes}` : `(${nextColor === 1 ? 'Black' : 'White'} to play)`;
+        activeStudyBar.classList.remove('hidden');
+
+        switchTab('board');
+        showStatus(`Loaded question "${q.title}". ${nextColor === 1 ? 'Black' : 'White'} to play.`);
+        updateUI();
+        draw();
+      }
+
+      function renderDatabase() {
+        folderTotalCountEl.textContent = `${folders.length} folder${folders.length === 1 ? '' : 's'}`;
+
+        const uncatCount = questions.filter(q => !q.folder).length;
+        let folderHtml = `
+          <button type="button" data-folder-filter="__ALL__" class="folder-filter-btn ${selectedFolderFilter === '__ALL__' ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex items-center justify-between transition">
+            <span>All Questions</span>
+            <span class="opacity-75">${questions.length}</span>
+          </button>
+          <button type="button" data-folder-filter="__UNCATEGORIZED__" class="folder-filter-btn ${selectedFolderFilter === '__UNCATEGORIZED__' ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex items-center justify-between transition">
+            <span>Uncategorized</span>
+            <span class="opacity-75">${uncatCount}</span>
+          </button>
+        `;
+
+        for (const f of folders) {
+          const count = questions.filter(q => q.folder === f).length;
+          const active = selectedFolderFilter === f;
+          const esc = f.replace(/"/g, '&quot;');
+          folderHtml += `
+            <button type="button" data-folder-filter="${esc}" class="folder-filter-btn ${active ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex items-center justify-between transition">
+              <span class="truncate pr-2">📁 ${f}</span>
+              <span class="opacity-75">${count}</span>
+            </button>
+          `;
+        }
+        folderListEl.innerHTML = folderHtml;
+
+        folderListEl.querySelectorAll('.folder-filter-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            selectedFolderFilter = btn.getAttribute('data-folder-filter');
+            renderDatabase();
+          });
+        });
+
+        let filtered = questions;
+        if (selectedFolderFilter === '__UNCATEGORIZED__') {
+          filtered = questions.filter(q => !q.folder);
+          currentFolderHeading.textContent = 'Uncategorized Questions';
+          btnDeleteCurrentFolder.classList.add('hidden');
+        } else if (selectedFolderFilter !== '__ALL__') {
+          filtered = questions.filter(q => q.folder === selectedFolderFilter);
+          currentFolderHeading.textContent = `Folder: ${selectedFolderFilter}`;
+          btnDeleteCurrentFolder.classList.remove('hidden');
+        } else {
+          currentFolderHeading.textContent = 'All Questions';
+          btnDeleteCurrentFolder.classList.add('hidden');
+        }
+        currentFolderSubCount.textContent = `(${filtered.length})`;
+
+        if (filtered.length === 0) {
+          questionsGrid.innerHTML = `
+            <div class="sm:col-span-2 lg:col-span-3 bg-white rounded-xl p-8 text-center border border-dashed border-stone-300 flex flex-col items-center justify-center gap-2">
+              <p class="text-sm font-semibold text-stone-700">No saved questions in this view yet</p>
+              <p class="text-xs text-stone-500 max-w-md">
+                Go to <strong>1. Blank Board</strong>, place Black and White stones to create any situation, and click <strong>+ Save as Question [Q]</strong> to store it here.
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        questionsGrid.innerHTML = filtered.map(q => {
+          const thumb = renderMiniBoardSvg(q.board, q.boardSize || 19, q.labels || {}, null);
+          const turnText = (q.firstTurn || 1) === 1 ? 'Black to play' : 'White to play';
+          let folderOpts = `<option value="" ${!q.folder ? 'selected' : ''}>Uncategorized</option>`;
+          for (const f of folders) {
+            const esc = f.replace(/"/g, '&quot;');
+            folderOpts += `<option value="${esc}" ${q.folder === f ? 'selected' : ''}>${f}</option>`;
+          }
+
+          return `
+            <div class="bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col justify-between gap-3 hover:border-stone-400 transition">
+              <div class="flex flex-col gap-2">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 class="text-sm font-semibold text-stone-900">${q.title}</h3>
+                    <span class="text-[11px] text-stone-500">${q.boardSize || 19}×${q.boardSize || 19} · ${turnText}</span>
+                  </div>
+                  <button type="button" data-del-q="${q.id}" title="Delete question" class="text-xs text-stone-400 hover:text-red-600 px-1.5 py-0.5 rounded">
+                    Delete
+                  </button>
+                </div>
+
+                <div class="flex justify-center py-1">${thumb}</div>
+
+                ${q.notes ? `<p class="text-xs text-stone-600 bg-stone-50 rounded-lg px-2.5 py-1.5 border border-stone-100">${q.notes}</p>` : ''}
+              </div>
+
+              <div class="flex flex-col gap-2 pt-1 border-t border-stone-100">
+                <div class="flex items-center justify-between gap-2 text-xs">
+                  <span class="text-stone-500">Folder:</span>
+                  <select data-move-q="${q.id}" aria-label="Move question to folder" class="text-xs bg-stone-50 border border-stone-200 rounded-md px-2 py-1 text-stone-800">
+                    ${folderOpts}
+                  </select>
+                </div>
+                <button type="button" data-load-q="${q.id}" class="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
+                  Load to Board &rarr;
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        questionsGrid.querySelectorAll('[data-load-q]').forEach(btn => {
+          btn.addEventListener('click', () => loadQuestionToBoard(btn.getAttribute('data-load-q')));
+        });
+
+        questionsGrid.querySelectorAll('[data-del-q]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-del-q');
+            questions = questions.filter(item => item.id !== id);
+            saveDatabaseToStorage();
+            updateUI();
+            renderDatabase();
+          });
+        });
+
+        questionsGrid.querySelectorAll('[data-move-q]').forEach(sel => {
+          sel.addEventListener('change', () => {
+            const id = sel.getAttribute('data-move-q');
+            const targetQ = questions.find(item => item.id === id);
+            if (targetQ) {
+              targetQ.folder = sel.value;
+              saveDatabaseToStorage();
+              renderDatabase();
+            }
+          });
+        });
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+        if (!saveQuestionModal.classList.contains('hidden')) {
+          if (e.key === 'Escape') closeSaveQuestionModal();
+          return;
+        }
+        const k = e.key.toLowerCase();
+        if (k === 'a') { setMode('alternate'); }
+        else if (k === 'b') { setMode('black'); }
+        else if (k === 'w') { setMode('white'); }
+        else if (k === 'e') { setMode('erase'); }
+        else if (k === 'm') { setMode('label'); }
+        else if (k === 'z') { btnUndo.click(); }
+        else if (k === 'y') { btnRedo.click(); }
+        else if (k === 'n') { btnNumbers.click(); }
+        else if (k === 'c') { btnCoords.click(); }
+        else if (k === 'k') { btnCapture.click(); }
+        else if (k === 's') { btnSound.click(); }
+        else if (k === 'x') { btnClear.click(); }
+        else if (k === 'q') { openSaveQuestionModal(); }
+        else if (k === 'r' && studyBaseline) { btnResetBaseline.click(); }
+      });
+
+      window.addEventListener('resize', () => {
+        if (activeTab === 'board') {
+          resizeCanvas();
+          draw();
+        }
+      });
 
       window.onload = () => {
+        loadDatabaseFromStorage();
         resetState(19);
+        renderShapesCatalog();
+        renderDatabase();
       };
     })();
   </script>
