@@ -51,23 +51,23 @@
           <span class="font-semibold text-stone-800 text-sm sm:text-base">Go Study Board</span>
         </div>
         <!-- 3 Independent Modules Navigation -->
-        <nav class="flex items-center bg-stone-100 p-1 rounded-lg border border-stone-200" aria-label="Main modules">
+        <nav class="flex items-center bg-stone-100 p-1 rounded-lg border border-stone-200 flex-wrap gap-0.5" aria-label="Main modules">
           <button type="button" data-tab="board" class="module-tab tab-active px-3 py-1 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition">
-            1. Blank Board
+            1. Sandbox Board
           </button>
           <button type="button" data-tab="shapes" class="module-tab px-3 py-1 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition">
-            2. Go Shapes
+            2. Eye Shapes
           </button>
           <button type="button" data-tab="database" class="module-tab px-3 py-1 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition flex items-center gap-1.5">
-            <span>3. Question Database</span>
+            <span>3. Problem Bank</span>
             <span id="dbCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-stone-200 text-stone-800">0</span>
           </button>
           <button type="button" data-tab="joseki" class="module-tab px-3 py-1 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition flex items-center gap-1.5">
-            <span>4. Go Joseki</span>
+            <span>4. Joseki Library</span>
             <span id="josekiCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-stone-200 text-stone-800">0</span>
           </button>
           <button type="button" data-tab="lectures" class="module-tab px-3 py-1 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition flex items-center gap-1.5">
-            <span>5. Lecture Notes</span>
+            <span>5. Study Notebook</span>
             <span id="lectureCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-stone-200 text-stone-800">0</span>
           </button>
         </nav>
@@ -420,14 +420,14 @@
     <section id="moduleLectures" class="hidden flex-col gap-4">
       <div class="bg-white rounded-xl p-4 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="text-sm sm:text-base font-semibold text-stone-900">Go Lecture Notes</h2>
+          <h2 class="text-sm sm:text-base font-semibold text-stone-900">Go Study Notebook</h2>
           <p class="text-xs text-stone-500 mt-0.5">
-            Write plain-text concept explanations and attach real board examples (and variations) directly from your Blank Board.
+            Save concept notes in plain text and attach board diagrams directly from your Sandbox Board to illustrate each idea.
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <button type="button" id="btnNewLecture" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
-            + New Lecture Note
+            + New Note
           </button>
           <button type="button" id="btnExportLectures" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
             Export JSON
@@ -443,7 +443,7 @@
         <!-- Lecture List Sidebar -->
         <div class="bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col gap-2.5">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Lectures</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Saved Notes</span>
             <span id="lectureListCount" class="text-xs text-stone-400">0</span>
           </div>
           <div id="lectureListEl" class="flex flex-col gap-1.5"></div>
@@ -839,6 +839,7 @@
           localStorage.setItem(STORAGE_JOSEKI_FOLDERS_KEY, JSON.stringify(josekiFolders));
           localStorage.setItem(STORAGE_JOSEKI_KEY, JSON.stringify(josekiList));
           localStorage.setItem(STORAGE_SHAPE_SOLUTIONS_KEY, JSON.stringify(shapeSolutionsMap));
+          localStorage.setItem(STORAGE_LECTURES_KEY, JSON.stringify(lectures));
         } catch (_) {}
       }
 
@@ -859,6 +860,9 @@
         moduleJoseki.classList.toggle('hidden', tabName !== 'joseki');
         moduleJoseki.classList.toggle('flex', tabName === 'joseki');
 
+        moduleLectures.classList.toggle('hidden', tabName !== 'lectures');
+        moduleLectures.classList.toggle('flex', tabName === 'lectures');
+
         if (tabName === 'board') {
           resizeCanvas();
           draw();
@@ -866,9 +870,10 @@
           renderShapesCatalog();
         } else if (tabName === 'database') {
           renderDatabase();
-        renderJosekiLibrary();
         } else if (tabName === 'joseki') {
           renderJosekiLibrary();
+        } else if (tabName === 'lectures') {
+          renderLectures();
         }
       }
 
@@ -3354,6 +3359,8 @@
         loadDatabaseFromStorage();
         renderShapesCatalog();
         renderDatabase();
+        renderJosekiLibrary();
+        renderLectures();
         if (questions.length > 0) {
           loadQuestionToBoard(questions[0].id);
         } else {
