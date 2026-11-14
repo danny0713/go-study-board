@@ -210,15 +210,15 @@
           </div>
         </div>
 
-        <!-- Overall Description Bar (for Solution, Joseki, or Branch) -->
-        <div id="solDescriptionBar" class="hidden pt-2 border-t border-amber-200/80 flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2 flex-1 min-w-[240px]">
-            <span id="solDescriptionLabel" class="font-semibold text-amber-900 shrink-0">Overall Description:</span>
-            <input id="solDescriptionInput" type="text" placeholder="Write an overall explanation for this solution / joseki / branch..." class="w-full px-2.5 py-1 rounded-lg border border-amber-300 bg-white text-stone-800 focus:outline-none focus:border-amber-500">
+        <!-- Overall Description Bar (for Whole Solution, Joseki, or Branch) -->
+        <div id="solDescriptionBar" class="hidden pt-2 border-t border-amber-200/80 flex flex-col gap-1.5">
+          <div class="flex items-center justify-between gap-2">
+            <label for="solDescriptionInput" id="solDescriptionLabel" class="font-semibold text-amber-900">Whole Solution / Joseki Description:</label>
+            <button type="button" id="btnSaveSolDescription" class="px-2.5 py-1 rounded-lg font-medium bg-stone-800 text-white hover:bg-stone-900 transition shrink-0">
+              Save Whole Description
+            </button>
           </div>
-          <button type="button" id="btnSaveSolDescription" class="px-2.5 py-1 rounded-lg font-medium bg-stone-800 text-white hover:bg-stone-900 transition shrink-0">
-            Save Description
-          </button>
+          <textarea id="solDescriptionInput" rows="2" placeholder="Write an overall explanation or key takeaway for this whole solution, joseki, or branch (not just a single move)..." class="w-full px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white text-stone-800 focus:outline-none focus:border-amber-500 leading-relaxed"></textarea>
         </div>
 
         <!-- Per-Move Remark / Comment Bar (for Solutions & Joseki) -->
@@ -620,8 +620,26 @@
       const moduleShapes = document.getElementById('moduleShapes');
       const moduleDatabase = document.getElementById('moduleDatabase');
       const moduleJoseki = document.getElementById('moduleJoseki');
+      const moduleLectures = document.getElementById('moduleLectures');
       const dbCountBadge = document.getElementById('dbCountBadge');
       const josekiCountBadge = document.getElementById('josekiCountBadge');
+      const lectureCountBadge = document.getElementById('lectureCountBadge');
+
+      const branchPickerGroup = document.getElementById('branchPickerGroup');
+      const branchSelect = document.getElementById('branchSelect');
+      const btnSaveBranch = document.getElementById('btnSaveBranch');
+      const btnDeleteBranch = document.getElementById('btnDeleteBranch');
+      const solDescriptionBar = document.getElementById('solDescriptionBar');
+      const solDescriptionLabel = document.getElementById('solDescriptionLabel');
+      const solDescriptionInput = document.getElementById('solDescriptionInput');
+      const btnSaveSolDescription = document.getElementById('btnSaveSolDescription');
+
+      const btnNewLecture = document.getElementById('btnNewLecture');
+      const btnExportLectures = document.getElementById('btnExportLectures');
+      const inputImportLectures = document.getElementById('inputImportLectures');
+      const lectureListCount = document.getElementById('lectureListCount');
+      const lectureListEl = document.getElementById('lectureListEl');
+      const lectureDetailArea = document.getElementById('lectureDetailArea');
 
       const josekiReplayControls = document.getElementById('josekiReplayControls');
       const btnJosekiFirst = document.getElementById('btnJosekiFirst');
@@ -726,6 +744,8 @@
       const STORAGE_JOSEKI_KEY = 'go_study_joseki_v1';
       const STORAGE_JOSEKI_FOLDERS_KEY = 'go_study_joseki_folders_v1';
       const STORAGE_SHAPE_SOLUTIONS_KEY = 'go_study_shape_solutions_v1';
+      const STORAGE_LECTURES_KEY = 'go_study_lectures_v1';
+      let activeBranchIndex = -1;
       let folders = [];
       let questions = [];
       let selectedFolderFilter = '__ALL__';
@@ -734,6 +754,8 @@
       let josekiList = [];
       let selectedJosekiFolderFilter = '__ALL__';
       let shapeSolutionsMap = {}; // shapeKey -> [ { name: 'sol1', moves: [ {x,y,color,comment} ] } ]
+      let lectures = [];
+      let selectedLectureId = null;
 
       const INITIAL_SEED_QUESTIONS = [
         {
@@ -789,6 +811,8 @@
           q.solutions = q.solutions.map((s, idx) => ({
             name: s.name || `sol${idx + 1}`,
             type: s.type === 'wrong' ? 'wrong' : 'correct',
+            description: s.description || '',
+            branches: Array.isArray(s.branches) ? s.branches : [],
             moves: Array.isArray(s.moves) ? s.moves.map(m => ({ ...m, comment: m.comment || '' })) : []
           }));
           relabelSolutionsList(q.solutions);
@@ -823,12 +847,18 @@
           const rawSS = localStorage.getItem(STORAGE_SHAPE_SOLUTIONS_KEY);
           shapeSolutionsMap = rawSS ? JSON.parse(rawSS) : {};
           if (!shapeSolutionsMap || typeof shapeSolutionsMap !== 'object') shapeSolutionsMap = {};
+
+          const rawLec = localStorage.getItem(STORAGE_LECTURES_KEY);
+          lectures = rawLec ? JSON.parse(rawLec) : [];
+          if (!Array.isArray(lectures)) lectures = [];
+          if (lectures.length > 0 && !selectedLectureId) selectedLectureId = lectures[0].id;
         } catch (_) {
           folders = ["Basic dead-or-alive"];
           questions = INITIAL_SEED_QUESTIONS.map(normalizeQuestionSolutions);
           josekiFolders = [];
           josekiList = [];
           shapeSolutionsMap = {};
+          lectures = [];
         }
       }
 
@@ -1165,6 +1195,7 @@
         moveCountEl.textContent = moveCounter;
         dbCountBadge.textContent = String(questions.length);
         josekiCountBadge.textContent = String(josekiList.length);
+        if (lectureCountBadge) lectureCountBadge.textContent = String(lectures.length);
 
         btnUndo.disabled = history.length === 0;
         btnRedo.disabled = redoStack.length === 0;
@@ -1770,7 +1801,13 @@
         if (!container) {
           branchPickerGroup.classList.add('hidden');
           branchPickerGroup.classList.remove('flex');
-          solDescriptionBar.classList.add('hidden');
+          // Even if no solution is saved yet, if a Shape or Question is loaded on the board, show the Whole Description bar so the user can type the description before/while saving a new solution
+          if (activeTargetType === 'question' || activeTargetType === 'shape') {
+            solDescriptionLabel.textContent = 'Whole Solution Description (Draft for next saved sol/wrong):';
+            solDescriptionBar.classList.remove('hidden');
+          } else {
+            solDescriptionBar.classList.add('hidden');
+          }
           return;
         }
         if (!Array.isArray(container.branches)) container.branches = [];
@@ -1791,7 +1828,7 @@
           : container;
         const descPrefix = activeBranchIndex >= 0
           ? (targetObj.name || `Branch ${activeBranchIndex + 1}`)
-          : (activeTargetType === 'joseki' ? 'Joseki' : (container.name || 'Solution'));
+          : (activeTargetType === 'joseki' ? `Whole Joseki (${container.title || 'Joseki'})` : `Whole Solution (${container.name || 'sol'})`);
         solDescriptionLabel.textContent = `${descPrefix} Description:`;
         solDescriptionInput.value = targetObj.description || targetObj.notes || '';
         solDescriptionBar.classList.remove('hidden');
@@ -1960,10 +1997,11 @@
                   const delCls = isW
                     ? 'text-rose-600 hover:text-red-700 hover:bg-red-100 border-rose-200'
                     : 'text-emerald-600 hover:text-red-600 hover:bg-red-50 border-emerald-200';
+                  const dTip = s.description ? ` — ${s.description}` : '';
                   return `
-                  <div class="inline-flex items-center rounded-md border text-[11px] font-medium ${wrapCls}">
-                    <button type="button" data-shape-sol="${key}" data-sol-idx="${idx}" class="px-2 py-0.5 ${btnHover} rounded-l-md transition">
-                      ${s.name || (isW ? 'wrong' : 'sol')}
+                  <div class="inline-flex items-center rounded-md border text-[11px] font-medium ${wrapCls}" title="${(s.description || '').replace(/"/g, '&quot;')}">
+                    <button type="button" data-shape-sol="${key}" data-sol-idx="${idx}" class="px-2 py-0.5 ${btnHover} rounded-l-md transition max-w-[210px] truncate">
+                      ${s.name || (isW ? 'wrong' : 'sol')}${dTip}
                     </button>
                     <button type="button" data-del-shape-sol="${key}" data-sol-idx="${idx}" title="Delete this variation" class="px-1.5 py-0.5 ${delCls} rounded-r-md border-l transition">
                       ✕
@@ -2330,6 +2368,7 @@
         btnSaveQuestionSolution.classList.remove('hidden');
         btnSaveWrongSolution.classList.remove('hidden');
         syncSolutionPickerUI();
+        syncBranchAndDescUI();
         syncMoveCommentUI();
 
         if (clamped > 0 && moves[clamped - 1] && moves[clamped - 1].comment) {
@@ -2379,6 +2418,7 @@
         btnSaveQuestionSolution.classList.remove('hidden');
         btnSaveWrongSolution.classList.remove('hidden');
         syncSolutionPickerUI();
+        syncBranchAndDescUI();
         syncMoveCommentUI();
 
         if (showSolutionMode && q.solutions.length > 0) {
@@ -2400,16 +2440,21 @@
           return;
         }
         const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
+        const draftDesc = solDescriptionInput ? solDescriptionInput.value.trim() : '';
         sols.push({
           name: '',
           type: solType === 'wrong' ? 'wrong' : 'correct',
+          description: draftDesc,
+          branches: [],
           moves: moveSequence.map(m => ({ ...m, comment: m.comment || '' }))
         });
         relabelSolutionsList(sols);
         activeSolutionIndex = sols.length - 1;
+        activeBranchIndex = -1;
         const savedName = sols[activeSolutionIndex].name;
         saveDatabaseToStorage();
         syncSolutionPickerUI();
+        syncBranchAndDescUI();
         renderDatabase();
         renderShapesCatalog();
         showStatus(`Saved ${savedName} (${solType === 'wrong' ? 'Wrong / Failure variation' : 'Correct solution'}). Press [R] to reset and record another!`);
@@ -2455,6 +2500,7 @@
         josekiReplayControls.classList.add('hidden');
         josekiReplayControls.classList.remove('flex');
         syncSolutionPickerUI();
+        syncBranchAndDescUI();
         syncMoveCommentUI();
         renderDatabase();
         renderShapesCatalog();
@@ -2555,10 +2601,11 @@
                   const delCls = isW
                     ? 'text-rose-600 hover:text-red-700 hover:bg-red-100 border-rose-200'
                     : 'text-emerald-600 hover:text-red-600 hover:bg-red-50 border-emerald-200';
+                  const dTip = s.description ? ` — ${s.description}` : '';
                   return `
-                  <div class="inline-flex items-center rounded-md border text-[11px] font-medium ${wrapCls}">
-                    <button type="button" data-sol-q="${q.id}" data-sol-idx="${idx}" class="px-2 py-0.5 ${btnHover} rounded-l-md transition">
-                      ${s.name || (isW ? 'wrong' : 'sol')}
+                  <div class="inline-flex items-center rounded-md border text-[11px] font-medium ${wrapCls}" title="${(s.description || '').replace(/"/g, '&quot;')}">
+                    <button type="button" data-sol-q="${q.id}" data-sol-idx="${idx}" class="px-2 py-0.5 ${btnHover} rounded-l-md transition max-w-[210px] truncate">
+                      ${s.name || (isW ? 'wrong' : 'sol')}${dTip}
                     </button>
                     <button type="button" data-del-q-sol="${q.id}" data-sol-idx="${idx}" title="Delete this variation" class="px-1.5 py-0.5 ${delCls} rounded-r-md border-l transition">
                       ✕
@@ -3061,15 +3108,209 @@
       }
 
       // ==========================================
-      // MODULE 5: LECTURE NOTES (CONCEPTS & EXAMPLES)
+      // MODULE 5: STUDY NOTEBOOK (W3SCHOOLS-STYLE INTERLEAVED TEXT & LIVE BOARDS)
       // ==========================================
+      function normalizeLectureBlocks(lec) {
+        if (!Array.isArray(lec.blocks)) {
+          lec.blocks = [];
+          if (lec.content && lec.content.trim()) {
+            lec.blocks.push({
+              id: 'blk_' + Date.now() + '_t0',
+              type: 'text',
+              heading: 'Concept Overview',
+              text: lec.content
+            });
+          }
+          if (Array.isArray(lec.examples)) {
+            lec.examples.forEach((ex, i) => {
+              lec.blocks.push({
+                id: 'blk_' + Date.now() + '_b' + i,
+                type: 'board',
+                caption: ex.caption || `Example #${i + 1}`,
+                boardSize: ex.boardSize || 9,
+                setupBoard: ex.board ? ex.board.map(r => [...r]) : createEmptyBoard(9),
+                labels: { ...(ex.labels || {}) },
+                moves: Array.isArray(ex.moveSequence) ? ex.moveSequence.map(m => ({ ...m, comment: m.comment || '' })) : [],
+                step: Array.isArray(ex.moveSequence) ? ex.moveSequence.length : 0,
+                editMode: 'alternate'
+              });
+            });
+          }
+          if (lec.blocks.length === 0) {
+            lec.blocks.push({
+              id: 'blk_' + Date.now() + '_init',
+              type: 'text',
+              heading: '1. Concept Introduction',
+              text: ''
+            });
+          }
+          delete lec.content;
+          delete lec.examples;
+        }
+        return lec;
+      }
+
+      function computeInlineBlockState(blk) {
+        const sz = blk.boardSize || 9;
+        const b = blk.setupBoard ? blk.setupBoard.map(r => [...r]) : createEmptyBoard(sz);
+        const nums = createEmptyBoard(sz);
+        const moves = Array.isArray(blk.moves) ? blk.moves : [];
+        const targetStep = typeof blk.step === 'number' ? Math.max(0, Math.min(blk.step, moves.length)) : moves.length;
+
+        const getN = (x, y) => {
+          const res = [];
+          if (x > 0) res.push([x - 1, y]);
+          if (x < sz - 1) res.push([x + 1, y]);
+          if (y > 0) res.push([x, y - 1]);
+          if (y < sz - 1) res.push([x, y + 1]);
+          return res;
+        };
+
+        const getGrp = (sx, sy, tb) => {
+          const col = tb[sy][sx];
+          if (col === 0) return { stones: [], liberties: 0 };
+          const vis = new Set([`${sx},${sy}`]);
+          const libs = new Set();
+          const stones = [];
+          const stk = [[sx, sy]];
+          while (stk.length > 0) {
+            const [cx, cy] = stk.pop();
+            stones.push([cx, cy]);
+            for (const [nx, ny] of getN(cx, cy)) {
+              const k = `${nx},${ny}`;
+              if (tb[ny][nx] === 0) libs.add(k);
+              else if (tb[ny][nx] === col && !vis.has(k)) {
+                vis.add(k);
+                stk.push([nx, ny]);
+              }
+            }
+          }
+          return { stones, liberties: libs.size };
+        };
+
+        for (let i = 0; i < targetStep; i++) {
+          const mv = moves[i];
+          if (b[mv.y] && b[mv.y][mv.x] === 0) {
+            b[mv.y][mv.x] = mv.color;
+            const opp = mv.color === 1 ? 2 : 1;
+            for (const [nx, ny] of getN(mv.x, mv.y)) {
+              if (b[ny][nx] === opp) {
+                const g = getGrp(nx, ny, b);
+                if (g.liberties === 0) {
+                  for (const [qx, qy] of g.stones) {
+                    b[qy][qx] = 0;
+                    nums[qy][qx] = 0;
+                  }
+                }
+              }
+            }
+            nums[mv.y][mv.x] = i + 1;
+          }
+        }
+        return { b, nums, targetStep, totalMoves: moves.length };
+      }
+
+      function renderInteractiveBlockSvg(blk, blockIndex) {
+        const sz = blk.boardSize || 9;
+        const { b, nums } = computeInlineBlockState(blk);
+        const svgW = 280;
+        const pad = 24;
+        const step = (svgW - 2 * pad) / (sz - 1);
+        const r = Math.max(5, step * 0.45);
+        const end = pad + (sz - 1) * step;
+
+        let out = `<svg data-inline-board="${blockIndex}" viewBox="0 0 ${svgW} ${svgW}" class="w-64 h-64 sm:w-72 sm:h-72 rounded-xl border border-amber-300 shadow-sm cursor-pointer select-none" style="background:#dfb164" xmlns="http://www.w3.org/2000/svg">`;
+
+        // Grid lines
+        for (let i = 0; i < sz; i++) {
+          const pos = (pad + i * step).toFixed(1);
+          out += `<line x1="${pad}" y1="${pos}" x2="${end}" y2="${pos}" stroke="#3b2b13" stroke-width="1"/>`;
+          out += `<line x1="${pos}" y1="${pad}" x2="${pos}" y2="${end}" stroke="#3b2b13" stroke-width="1"/>`;
+        }
+
+        // Coordinates
+        for (let i = 0; i < sz; i++) {
+          const pos = (pad + i * step).toFixed(1);
+          out += `<text x="${pos}" y="12" font-size="8.5" font-weight="600" text-anchor="middle" fill="#4a3516">${COLS[i]}</text>`;
+          out += `<text x="10" y="${(pad + i * step + 3).toFixed(1)}" font-size="8.5" font-weight="600" text-anchor="middle" fill="#4a3516">${sz - i}</text>`;
+        }
+
+        // Star points
+        for (const [sx, sy] of getStarPoints(sz)) {
+          out += `<circle cx="${(pad + sx * step).toFixed(1)}" cy="${(pad + sy * step).toFixed(1)}" r="2.2" fill="#3b2b13"/>`;
+        }
+
+        // Stones & move numbers
+        for (let y = 0; y < sz; y++) {
+          for (let x = 0; x < sz; x++) {
+            const c = b[y][x];
+            if (c !== 0) {
+              const cx = (pad + x * step).toFixed(1);
+              const cy = (pad + y * step).toFixed(1);
+              const fill = c === 1 ? '#1c1c1c' : '#ffffff';
+              out += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="${fill}" stroke="#3b2b13" stroke-width="1"/>`;
+              const n = nums[y][x];
+              if (n > 0) {
+                const tCol = c === 1 ? '#ffffff' : '#1c1c1c';
+                out += `<text x="${cx}" y="${(parseFloat(cy) + 3).toFixed(1)}" font-size="${Math.max(7, r * 0.85).toFixed(1)}" font-weight="700" text-anchor="middle" fill="${tCol}">${n}</text>`;
+              }
+            }
+          }
+        }
+
+        // Labels A/B/C
+        for (const [k, ch] of Object.entries(blk.labels || {})) {
+          const [lx, ly] = k.split(',').map(Number);
+          if (lx < sz && ly < sz) {
+            const cx = (pad + lx * step).toFixed(1);
+            const cy = (pad + ly * step + 3.2).toFixed(1);
+            const onStone = b[ly][lx];
+            if (onStone === 0) {
+              out += `<circle cx="${cx}" cy="${(pad + ly * step).toFixed(1)}" r="${(r * 0.65).toFixed(1)}" fill="#dfb164"/>`;
+            }
+            const col = onStone === 1 ? '#ffffff' : '#1f2937';
+            out += `<text x="${cx}" y="${cy}" font-size="${Math.max(8, r * 0.9).toFixed(1)}" font-weight="700" text-anchor="middle" fill="${col}">${ch}</text>`;
+          }
+        }
+
+        // Transparent click targets for each intersection
+        const hitR = (step * 0.48).toFixed(1);
+        for (let y = 0; y < sz; y++) {
+          for (let x = 0; x < sz; x++) {
+            const cx = (pad + x * step).toFixed(1);
+            const cy = (pad + y * step).toFixed(1);
+            out += `<circle data-bx="${x}" data-by="${y}" cx="${cx}" cy="${cy}" r="${hitR}" fill="transparent"/>`;
+          }
+        }
+
+        out += '</svg>';
+        return out;
+      }
+
       function createNewLecture() {
         const lec = {
           id: 'lec_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-          title: `Lecture Note #${lectures.length + 1}`,
-          topic: 'General Concepts',
-          content: '',
-          examples: [],
+          title: `Chapter ${lectures.length + 1}: New Go Topic`,
+          topic: 'Fundamentals',
+          blocks: [
+            {
+              id: 'blk_' + Date.now() + '_1',
+              type: 'text',
+              heading: 'Concept 1',
+              text: 'Write your explanation for Concept 1 here...'
+            },
+            {
+              id: 'blk_' + Date.now() + '_2',
+              type: 'board',
+              caption: 'Example 1 — Interactive Board',
+              boardSize: 9,
+              setupBoard: createEmptyBoard(9),
+              labels: {},
+              moves: [],
+              step: 0,
+              editMode: 'setup_black'
+            }
+          ],
           updatedAt: new Date().toLocaleDateString()
         };
         lectures.unshift(lec);
@@ -3087,7 +3328,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'go_lecture_notes.json';
+        a.download = 'go_study_notebook.json';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -3102,7 +3343,7 @@
           try {
             const parsed = JSON.parse(reader.result);
             if (Array.isArray(parsed.lectures)) {
-              lectures = [...parsed.lectures, ...lectures];
+              lectures = [...parsed.lectures.map(normalizeLectureBlocks), ...lectures];
               if (lectures.length > 0 && !selectedLectureId) selectedLectureId = lectures[0].id;
               saveDatabaseToStorage();
               updateUI();
@@ -3114,63 +3355,99 @@
         inputImportLectures.value = '';
       });
 
-      function loadLectureExampleToBoard(lecId, exIdx) {
-        const lec = lectures.find(l => l.id === lecId);
-        if (!lec || !lec.examples || !lec.examples[exIdx]) return;
-        const ex = lec.examples[exIdx];
-        resetState(ex.boardSize || 19, false);
-        board = ex.board.map(r => [...r]);
-        moveNums = ex.moveNums ? ex.moveNums.map(r => [...r]) : createEmptyBoard(boardSize);
-        moveSequence = Array.isArray(ex.moveSequence) ? ex.moveSequence.map(m => ({ ...m })) : [];
-        labels = { ...(ex.labels || {}) };
-        nextColor = ex.nextColor || 1;
-        moveCounter = moveSequence.length;
-        showNumbers = moveSequence.length > 0;
-        setMode('alternate');
+      function buildImportSourceOptionsHtml() {
+        let html = `<option value="sandbox">From 1. Sandbox Board (Current Position)</option>`;
+        html += `<optgroup label="From 2. Eye Shapes">`;
+        for (const [k, item] of Object.entries(SHAPE_PRESETS)) {
+          html += `<option value="shape:${k}">${item.name}</option>`;
+        }
+        html += `</optgroup>`;
+        if (questions.length > 0) {
+          html += `<optgroup label="From 3. Problem Bank">`;
+          for (const q of questions) {
+            html += `<option value="question:${q.id}">${q.title}</option>`;
+          }
+          html += `</optgroup>`;
+        }
+        if (josekiList.length > 0) {
+          html += `<optgroup label="From 4. Joseki Library">`;
+          for (const j of josekiList) {
+            html += `<option value="joseki:${j.id}">${j.title}</option>`;
+          }
+          html += `</optgroup>`;
+        }
+        return html;
+      }
 
-        activeTargetType = null;
-        activeQuestionId = null;
-        activeJosekiReplay = null;
-        activeSolutionReplay = null;
-        studyBaseline = {
-          title: `${lec.title} — ${ex.caption || 'Example'}`,
-          subtitle: 'Lecture Example',
-          snapshot: cloneState()
-        };
-        activeStudyTitle.textContent = `Lecture Example: ${ex.caption || 'Board Diagram'}`;
-        activeDifficultyBadge.classList.add('hidden');
-        activeStudySub.textContent = `(from "${lec.title}")`;
-        activeStudyBar.classList.remove('hidden');
-        josekiReplayControls.classList.add('hidden');
-        josekiReplayControls.classList.remove('flex');
-        solutionPickerGroup.classList.add('hidden');
-        solutionPickerGroup.classList.remove('flex');
-        branchPickerGroup.classList.add('hidden');
-        branchPickerGroup.classList.remove('flex');
-        btnSaveQuestionSolution.classList.add('hidden');
-        btnSaveWrongSolution.classList.add('hidden');
-        solDescriptionBar.classList.add('hidden');
-        syncMoveCommentUI();
-
-        switchTab('board');
-        showStatus(`Loaded lecture example "${ex.caption || 'Board Diagram'}". Play variations freely on the board!`);
-        updateUI();
-        draw();
+      function importPositionIntoBoardBlock(blk, sourceVal) {
+        if (sourceVal === 'sandbox') {
+          blk.boardSize = boardSize;
+          blk.setupBoard = studyBaseline && studyBaseline.snapshot
+            ? studyBaseline.snapshot.board.map(r => [...r])
+            : board.map(r => [...r]);
+          blk.labels = { ...labels };
+          blk.moves = moveSequence.map(m => ({ ...m, comment: m.comment || '' }));
+          blk.step = blk.moves.length;
+          return;
+        }
+        if (sourceVal.startsWith('shape:')) {
+          const key = sourceVal.slice(6);
+          const preset = SHAPE_PRESETS[key];
+          if (!preset) return;
+          const { black: defWall, white: attRing } = buildSealedShape(preset.eye);
+          blk.boardSize = 9;
+          blk.setupBoard = createEmptyBoard(9);
+          for (const [dx, dy] of defWall) if (dx < 9 && dy < 9) blk.setupBoard[dy][dx] = 2;
+          for (const [ax, ay] of attRing) if (ax < 9 && ay < 9) blk.setupBoard[ay][ax] = 1;
+          blk.labels = {};
+          const sols = getTargetSolutionsArray('shape', key);
+          blk.moves = (sols[0] && Array.isArray(sols[0].moves)) ? sols[0].moves.map(m => ({ ...m })) : [];
+          blk.step = blk.moves.length;
+          blk.caption = preset.name;
+          return;
+        }
+        if (sourceVal.startsWith('question:')) {
+          const qId = sourceVal.slice(9);
+          const q = questions.find(item => item.id === qId);
+          if (!q) return;
+          normalizeQuestionSolutions(q);
+          blk.boardSize = q.boardSize || 9;
+          blk.setupBoard = q.board.map(r => [...r]);
+          blk.labels = { ...(q.labels || {}) };
+          blk.moves = (q.solutions && q.solutions[0] && Array.isArray(q.solutions[0].moves))
+            ? q.solutions[0].moves.map(m => ({ ...m }))
+            : [];
+          blk.step = blk.moves.length;
+          blk.caption = q.title;
+          return;
+        }
+        if (sourceVal.startsWith('joseki:')) {
+          const jId = sourceVal.slice(7);
+          const j = josekiList.find(item => item.id === jId);
+          if (!j) return;
+          blk.boardSize = j.boardSize || 19;
+          blk.setupBoard = createEmptyBoard(blk.boardSize);
+          blk.labels = {};
+          blk.moves = Array.isArray(j.moves) ? j.moves.map(m => ({ ...m })) : [];
+          blk.step = blk.moves.length;
+          blk.caption = j.title;
+        }
       }
 
       function renderLectures() {
+        lectures = lectures.map(normalizeLectureBlocks);
         lectureListCount.textContent = String(lectures.length);
 
         if (lectures.length === 0) {
-          lectureListEl.innerHTML = `<div class="text-xs text-stone-400 py-2">No lectures yet.</div>`;
+          lectureListEl.innerHTML = `<div class="text-xs text-stone-400 py-2">No pages yet.</div>`;
           lectureDetailArea.innerHTML = `
             <div class="py-10 text-center flex flex-col items-center gap-3">
-              <p class="text-sm font-semibold text-stone-700">No lecture notes yet</p>
+              <p class="text-sm font-semibold text-stone-700">Your Go Study Notebook is empty</p>
               <p class="text-xs text-stone-500 max-w-md">
-                Create your first lecture note to write plain-text Go concepts and attach real board examples and variations directly from your Blank Board.
+                Create a tutorial page where you can alternate plain-text concept explanations and interactive Go boards right inside the page (just like W3Schools).
               </p>
               <button type="button" id="btnEmptyCreateLec" class="px-4 py-2 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
-                + Create First Lecture Note
+                + Create First Note Page
               </button>
             </div>
           `;
@@ -3185,10 +3462,11 @@
 
         lectureListEl.innerHTML = lectures.map(l => {
           const active = l.id === selectedLectureId;
+          const bCount = (l.blocks || []).filter(b => b.type === 'board').length;
           return `
             <button type="button" data-select-lec="${l.id}" class="${active ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full text-left px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex flex-col gap-0.5 transition">
-              <span class="truncate font-semibold">${l.title || 'Untitled Lecture'}</span>
-              <span class="text-[11px] opacity-75 truncate">${l.topic || 'General'} · ${(l.examples || []).length} example${(l.examples || []).length === 1 ? '' : 's'}</span>
+              <span class="truncate font-semibold">${l.title || 'Untitled Page'}</span>
+              <span class="text-[11px] opacity-75 truncate">${l.topic || 'General'} · ${bCount} board${bCount === 1 ? '' : 's'}</span>
             </button>
           `;
         }).join('');
@@ -3202,78 +3480,159 @@
 
         const lec = lectures.find(l => l.id === selectedLectureId);
         if (!lec) return;
-        if (!Array.isArray(lec.examples)) lec.examples = [];
+        normalizeLectureBlocks(lec);
 
-        const examplesHtml = lec.examples.length > 0
-          ? lec.examples.map((ex, idx) => {
-              const thumb = renderMiniBoardSvg(ex.board, ex.boardSize || 19, { ...(ex.labels || {}), __moveNums: ex.moveNums }, null);
-              return `
-                <div class="bg-stone-50 rounded-xl p-3 border border-stone-200 flex flex-col gap-2">
-                  <div class="flex items-start justify-between gap-2">
-                    <span class="text-xs font-semibold text-stone-800">${ex.caption || `Example #${idx + 1}`}</span>
-                    <button type="button" data-del-ex="${idx}" class="text-[11px] text-stone-400 hover:text-red-600">Remove</button>
+        const importOptionsHtml = buildImportSourceOptionsHtml();
+
+        const blocksHtml = lec.blocks.map((blk, idx) => {
+          const moveUpBtn = idx > 0
+            ? `<button type="button" data-blk-up="${idx}" title="Move block up" class="px-2 py-0.5 rounded border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 text-[11px]">↑</button>`
+            : '';
+          const moveDownBtn = idx < lec.blocks.length - 1
+            ? `<button type="button" data-blk-down="${idx}" title="Move block down" class="px-2 py-0.5 rounded border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 text-[11px]">↓</button>`
+            : '';
+
+          if (blk.type === 'text') {
+            return `
+              <div class="bg-stone-50/70 rounded-xl p-4 border border-stone-200 flex flex-col gap-2.5">
+                <div class="flex items-center justify-between gap-2">
+                  <input type="text" data-blk-heading="${idx}" value="${(blk.heading || '').replace(/"/g, '&quot;')}" placeholder="Section Heading (e.g. Concept 1: Why Bent Four Lives)" class="flex-1 text-sm font-semibold px-2.5 py-1 rounded-lg border border-stone-200 bg-white text-stone-900 focus:outline-none focus:border-stone-400">
+                  <div class="flex items-center gap-1">
+                    ${moveUpBtn}
+                    ${moveDownBtn}
+                    <button type="button" data-blk-del="${idx}" class="px-2 py-0.5 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Delete</button>
                   </div>
-                  <div class="flex justify-center">${thumb}</div>
-                  ${ex.note ? `<p class="text-xs text-stone-600 leading-relaxed">${ex.note}</p>` : ''}
-                  <button type="button" data-load-ex="${idx}" class="w-full py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
-                    Load Example to Board &rarr;
+                </div>
+                <textarea data-blk-text="${idx}" rows="4" placeholder="Write your concept explanation here..." class="w-full text-xs sm:text-sm leading-relaxed p-3 rounded-lg border border-stone-200 bg-white text-stone-800 focus:outline-none focus:border-stone-400">${blk.text || ''}</textarea>
+                <div class="flex items-center gap-2 pt-1">
+                  <button type="button" data-insert-after="${idx}" data-insert-type="board" class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-600 text-white hover:bg-amber-700 transition">
+                    + Insert Interactive Board Below
+                  </button>
+                  <button type="button" data-insert-after="${idx}" data-insert-type="text" class="px-2.5 py-1 rounded-md text-[11px] font-medium border border-stone-300 bg-white text-stone-700 hover:bg-stone-100 transition">
+                    + Insert Text Section Below
                   </button>
                 </div>
-              `;
-            }).join('')
-          : `<div class="sm:col-span-2 text-xs text-stone-400 border border-dashed border-stone-200 rounded-xl p-5 text-center">
-              Set up any board position or variation on <strong>1. Blank Board</strong>, then click <strong>+ Attach Current Board as Example</strong> below.
-            </div>`;
+              </div>
+            `;
+          }
 
-        lectureDetailArea.innerHTML = `
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-stone-100">
-            <div class="flex-1 min-w-[220px] grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <input id="lecTitleInput" type="text" value="${(lec.title || '').replace(/"/g, '&quot;')}" placeholder="Lecture Title" class="sm:col-span-2 text-sm font-semibold px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
-              <input id="lecTopicInput" type="text" value="${(lec.topic || '').replace(/"/g, '&quot;')}" placeholder="Topic (e.g. Life & Death)" class="text-xs font-medium px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-700 focus:outline-none focus:bg-white focus:border-stone-400">
-            </div>
-            <button type="button" id="btnDeleteLecture" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 border border-red-200 transition">
-              Delete Lecture
-            </button>
-          </div>
+          // Interactive Board Block rendered directly inside the Note Page
+          const { targetStep, totalMoves } = computeInlineBlockState(blk);
+          const curMoveComment = (targetStep > 0 && blk.moves && blk.moves[targetStep - 1])
+            ? (blk.moves[targetStep - 1].comment || '')
+            : '';
+          const em = blk.editMode || 'setup_black';
 
-          <div class="flex flex-col gap-1.5">
-            <label for="lecContentTextarea" class="text-xs font-semibold text-stone-700">Concept Explanation (Plain Text)</label>
-            <textarea id="lecContentTextarea" rows="8" placeholder="Write your Go concept explanation, rules of thumb, and key ideas here..." class="w-full text-xs sm:text-sm leading-relaxed p-3 rounded-xl border border-stone-200 bg-stone-50 text-stone-800 focus:outline-none focus:bg-white focus:border-stone-400">${lec.content || ''}</textarea>
-          </div>
+          return `
+            <div class="bg-amber-50/50 rounded-xl p-4 border border-amber-200 flex flex-col gap-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <input type="text" data-blk-caption="${idx}" value="${(blk.caption || '').replace(/"/g, '&quot;')}" placeholder="Example Caption (e.g. Example 1: Black Plays the Vital Point)" class="flex-1 min-w-[200px] text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-lg border border-amber-300 bg-white text-stone-900 focus:outline-none">
+                <div class="flex items-center gap-1">
+                  ${moveUpBtn}
+                  ${moveDownBtn}
+                  <button type="button" data-blk-del="${idx}" class="px-2 py-0.5 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Delete</button>
+                </div>
+              </div>
 
-          <div class="flex flex-col gap-3 pt-2 border-t border-stone-100">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <span class="text-xs font-semibold text-stone-700">Board Examples &amp; Variations (${lec.examples.length})</span>
-              <div class="flex flex-wrap items-center gap-1.5">
-                <input id="exCaptionInput" type="text" placeholder="Example caption (e.g. Vital Point at D7)" class="text-xs px-2.5 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-800 focus:outline-none focus:bg-white">
-                <button type="button" id="btnAttachCurrentBoard" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition">
-                  + Attach Current Board as Example
+              <!-- Inline Board + Controls Side-by-Side (W3Schools Example Card) -->
+              <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center bg-white rounded-xl p-3.5 border border-stone-200">
+                <div class="lg:col-span-6 flex justify-center">
+                  ${renderInteractiveBlockSvg(blk, idx)}
+                </div>
+
+                <div class="lg:col-span-6 flex flex-col gap-2.5 text-xs">
+                  <!-- Step-by-Step Variation Replay right inside the note -->
+                  <div class="bg-stone-50 rounded-lg p-2.5 border border-stone-200 flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                      <span class="font-semibold text-stone-700">Variation Replay</span>
+                      <span class="font-mono font-semibold text-stone-900">Move ${targetStep} / ${totalMoves}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <button type="button" data-blk-step="${idx}" data-step-to="0" class="px-2.5 py-1 rounded bg-white border border-stone-300 font-semibold hover:bg-stone-100">|&lt;</button>
+                      <button type="button" data-blk-step="${idx}" data-step-to="${targetStep - 1}" class="px-3 py-1 rounded bg-white border border-stone-300 font-semibold hover:bg-stone-100">&lt; Prev</button>
+                      <button type="button" data-blk-step="${idx}" data-step-to="${targetStep + 1}" class="px-3 py-1 rounded bg-white border border-stone-300 font-semibold hover:bg-stone-100">Next &gt;</button>
+                      <button type="button" data-blk-step="${idx}" data-step-to="${totalMoves}" class="px-2.5 py-1 rounded bg-white border border-stone-300 font-semibold hover:bg-stone-100">&gt;|</button>
+                    </div>
+                    <div class="flex items-center gap-1.5 pt-1">
+                      <input type="text" data-blk-mv-comment="${idx}" value="${curMoveComment.replace(/"/g, '&quot;')}" placeholder="${targetStep > 0 ? `Remark for Move #${targetStep}...` : 'Play or step to a move (1, 2...) to add a move remark'}" ${targetStep === 0 ? 'disabled' : ''} class="w-full px-2 py-1 rounded border border-stone-200 bg-white text-stone-800 disabled:opacity-50">
+                    </div>
+                  </div>
+
+                  <!-- Direct Inline Stone Placement & Import Controls -->
+                  <div class="bg-stone-50 rounded-lg p-2.5 border border-stone-200 flex flex-col gap-2">
+                    <div class="flex items-center justify-between flex-wrap gap-1">
+                      <span class="font-semibold text-stone-700">Click Board to Place:</span>
+                      <div class="flex items-center gap-1">
+                        <button type="button" data-blk-size="${idx}" data-sz="9" class="${(blk.boardSize || 9) === 9 ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-0.5 rounded border border-stone-200 text-[11px]">9×9</button>
+                        <button type="button" data-blk-size="${idx}" data-sz="13" class="${blk.boardSize === 13 ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-0.5 rounded border border-stone-200 text-[11px]">13×13</button>
+                        <button type="button" data-blk-size="${idx}" data-sz="19" class="${blk.boardSize === 19 ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-0.5 rounded border border-stone-200 text-[11px]">19×19</button>
+                      </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1">
+                      <button type="button" data-blk-mode="${idx}" data-m="setup_black" class="${em === 'setup_black' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Setup Black</button>
+                      <button type="button" data-blk-mode="${idx}" data-m="setup_white" class="${em === 'setup_white' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Setup White</button>
+                      <button type="button" data-blk-mode="${idx}" data-m="play_seq" class="${em === 'play_seq' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Play 1,2,3...</button>
+                      <button type="button" data-blk-mode="${idx}" data-m="label" class="${em === 'label' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Mark A/B/C</button>
+                      <button type="button" data-blk-clear-moves="${idx}" class="px-2 py-1 rounded border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 text-[11px]">Clear 1,2,3</button>
+                      <button type="button" data-blk-clear-all="${idx}" class="px-2 py-1 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Clear Board</button>
+                    </div>
+
+                    <!-- Import existing board from Sandbox, Eye Shapes, Problem Bank, or Joseki -->
+                    <div class="flex items-center gap-1.5 pt-1 border-t border-stone-200/80">
+                      <select data-blk-import-sel="${idx}" class="flex-1 text-[11px] px-2 py-1 rounded border border-stone-200 bg-white text-stone-800">
+                        ${importOptionsHtml}
+                      </select>
+                      <button type="button" data-blk-import-btn="${idx}" class="px-2.5 py-1 rounded bg-stone-800 text-white hover:bg-stone-900 text-[11px] font-medium shrink-0">
+                        Import Position
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 pt-1">
+                <button type="button" data-insert-after="${idx}" data-insert-type="text" class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-stone-800 text-white hover:bg-stone-900 transition">
+                  + Insert Text Section Below
+                </button>
+                <button type="button" data-insert-after="${idx}" data-insert-type="board" class="px-2.5 py-1 rounded-md text-[11px] font-medium border border-amber-300 bg-white text-amber-900 hover:bg-amber-100 transition">
+                  + Insert Another Board Below
                 </button>
               </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${examplesHtml}</div>
+          `;
+        }).join('');
+
+        lectureDetailArea.innerHTML = `
+          <!-- Page Title & Topic Header -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-stone-200">
+            <div class="flex-1 min-w-[220px] grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input id="lecTitleInput" type="text" value="${(lec.title || '').replace(/"/g, '&quot;')}" placeholder="Page Title (e.g. Classic Eye Shapes Tutorial)" class="sm:col-span-2 text-base font-bold px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
+              <input id="lecTopicInput" type="text" value="${(lec.topic || '').replace(/"/g, '&quot;')}" placeholder="Category (e.g. Life & Death)" class="text-xs font-medium px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-700 focus:outline-none focus:bg-white focus:border-stone-400">
+            </div>
+            <button type="button" id="btnDeleteLecture" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 border border-red-200 transition">
+              Delete Page
+            </button>
+          </div>
+
+          <!-- Interleaved Blocks Stream (Text 1 -> Board 1 -> Text 2 -> Board 2...) -->
+          <div class="flex flex-col gap-4">
+            ${blocksHtml}
           </div>
         `;
 
         const lecTitleInput = document.getElementById('lecTitleInput');
         const lecTopicInput = document.getElementById('lecTopicInput');
-        const lecContentTextarea = document.getElementById('lecContentTextarea');
         const btnDeleteLecture = document.getElementById('btnDeleteLecture');
-        const btnAttachCurrentBoard = document.getElementById('btnAttachCurrentBoard');
-        const exCaptionInput = document.getElementById('exCaptionInput');
 
         lecTitleInput.addEventListener('input', () => {
           lec.title = lecTitleInput.value;
           saveDatabaseToStorage();
           const activeBtn = lectureListEl.querySelector(`[data-select-lec="${lec.id}"] span:first-child`);
-          if (activeBtn) activeBtn.textContent = lec.title || 'Untitled Lecture';
+          if (activeBtn) activeBtn.textContent = lec.title || 'Untitled Page';
         });
+
         lecTopicInput.addEventListener('input', () => {
           lec.topic = lecTopicInput.value;
-          saveDatabaseToStorage();
-        });
-        lecContentTextarea.addEventListener('input', () => {
-          lec.content = lecContentTextarea.value;
           saveDatabaseToStorage();
         });
 
@@ -3285,36 +3644,250 @@
           renderLectures();
         });
 
-        btnAttachCurrentBoard.addEventListener('click', () => {
-          const cap = exCaptionInput.value.trim() || `Example #${lec.examples.length + 1}`;
-          lec.examples.push({
-            caption: cap,
-            boardSize,
-            board: board.map(r => [...r]),
-            moveNums: moveNums.map(r => [...r]),
-            moveSequence: moveSequence.map(m => ({ ...m })),
-            labels: { ...labels },
-            nextColor,
-            note: statusMsgEl.textContent || ''
-          });
-          saveDatabaseToStorage();
-          renderLectures();
-          showStatus(`Attached "${cap}" to lecture "${lec.title}".`);
-        });
-
-        lectureDetailArea.querySelectorAll('[data-load-ex]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const idx = parseInt(btn.getAttribute('data-load-ex'), 10);
-            loadLectureExampleToBoard(lec.id, idx);
+        // Text block bindings
+        lectureDetailArea.querySelectorAll('[data-blk-heading]').forEach(inp => {
+          inp.addEventListener('input', () => {
+            const idx = parseInt(inp.getAttribute('data-blk-heading'), 10);
+            if (lec.blocks[idx]) {
+              lec.blocks[idx].heading = inp.value;
+              saveDatabaseToStorage();
+            }
           });
         });
 
-        lectureDetailArea.querySelectorAll('[data-del-ex]').forEach(btn => {
+        lectureDetailArea.querySelectorAll('[data-blk-text]').forEach(ta => {
+          ta.addEventListener('input', () => {
+            const idx = parseInt(ta.getAttribute('data-blk-text'), 10);
+            if (lec.blocks[idx]) {
+              lec.blocks[idx].text = ta.value;
+              saveDatabaseToStorage();
+            }
+          });
+        });
+
+        lectureDetailArea.querySelectorAll('[data-blk-caption]').forEach(inp => {
+          inp.addEventListener('input', () => {
+            const idx = parseInt(inp.getAttribute('data-blk-caption'), 10);
+            if (lec.blocks[idx]) {
+              lec.blocks[idx].caption = inp.value;
+              saveDatabaseToStorage();
+            }
+          });
+        });
+
+        // Move remark inside board block
+        lectureDetailArea.querySelectorAll('[data-blk-mv-comment]').forEach(inp => {
+          inp.addEventListener('input', () => {
+            const idx = parseInt(inp.getAttribute('data-blk-mv-comment'), 10);
+            const blk = lec.blocks[idx];
+            if (blk && Array.isArray(blk.moves) && blk.step > 0 && blk.moves[blk.step - 1]) {
+              blk.moves[blk.step - 1].comment = inp.value;
+              saveDatabaseToStorage();
+            }
+          });
+        });
+
+        // Insert block below
+        lectureDetailArea.querySelectorAll('[data-insert-after]').forEach(btn => {
           btn.addEventListener('click', () => {
-            const idx = parseInt(btn.getAttribute('data-del-ex'), 10);
-            lec.examples.splice(idx, 1);
+            const idx = parseInt(btn.getAttribute('data-insert-after'), 10);
+            const bType = btn.getAttribute('data-insert-type');
+            const newBlk = bType === 'board'
+              ? {
+                  id: 'blk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+                  type: 'board',
+                  caption: `Example Board`,
+                  boardSize: 9,
+                  setupBoard: createEmptyBoard(9),
+                  labels: {},
+                  moves: [],
+                  step: 0,
+                  editMode: 'setup_black'
+                }
+              : {
+                  id: 'blk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+                  type: 'text',
+                  heading: `New Concept Section`,
+                  text: ''
+                };
+            lec.blocks.splice(idx + 1, 0, newBlk);
             saveDatabaseToStorage();
             renderLectures();
+          });
+        });
+
+        // Reorder / Delete blocks
+        lectureDetailArea.querySelectorAll('[data-blk-up]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-up'), 10);
+            if (idx > 0) {
+              const tmp = lec.blocks[idx - 1];
+              lec.blocks[idx - 1] = lec.blocks[idx];
+              lec.blocks[idx] = tmp;
+              saveDatabaseToStorage();
+              renderLectures();
+            }
+          });
+        });
+
+        lectureDetailArea.querySelectorAll('[data-blk-down]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-down'), 10);
+            if (idx < lec.blocks.length - 1) {
+              const tmp = lec.blocks[idx + 1];
+              lec.blocks[idx + 1] = lec.blocks[idx];
+              lec.blocks[idx] = tmp;
+              saveDatabaseToStorage();
+              renderLectures();
+            }
+          });
+        });
+
+        lectureDetailArea.querySelectorAll('[data-blk-del]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-del'), 10);
+            lec.blocks.splice(idx, 1);
+            if (lec.blocks.length === 0) {
+              lec.blocks.push({ id: 'blk_' + Date.now(), type: 'text', heading: 'Concept 1', text: '' });
+            }
+            saveDatabaseToStorage();
+            renderLectures();
+          });
+        });
+
+        // Inline Board Replay Stepper
+        lectureDetailArea.querySelectorAll('[data-blk-step]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-step'), 10);
+            const stepTo = parseInt(btn.getAttribute('data-step-to'), 10);
+            const blk = lec.blocks[idx];
+            if (blk) {
+              const maxS = Array.isArray(blk.moves) ? blk.moves.length : 0;
+              blk.step = Math.max(0, Math.min(stepTo, maxS));
+              saveDatabaseToStorage();
+              renderLectures();
+            }
+          });
+        });
+
+        // Inline Board Size Switcher
+        lectureDetailArea.querySelectorAll('[data-blk-size]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-size'), 10);
+            const sz = parseInt(btn.getAttribute('data-sz'), 10);
+            const blk = lec.blocks[idx];
+            if (blk) {
+              blk.boardSize = sz;
+              blk.setupBoard = createEmptyBoard(sz);
+              blk.labels = {};
+              blk.moves = [];
+              blk.step = 0;
+              saveDatabaseToStorage();
+              renderLectures();
+            }
+          });
+        });
+
+        // Inline Board Edit Mode Switcher
+        lectureDetailArea.querySelectorAll('[data-blk-mode]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-mode'), 10);
+            const m = btn.getAttribute('data-m');
+            const blk = lec.blocks[idx];
+            if (blk) {
+              blk.editMode = m;
+              renderLectures();
+            }
+          });
+        });
+
+        // Clear numbered moves or clear whole inline board
+        lectureDetailArea.querySelectorAll('[data-blk-clear-moves]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-clear-moves'), 10);
+            const blk = lec.blocks[idx];
+            if (blk) {
+              blk.moves = [];
+              blk.step = 0;
+              saveDatabaseToStorage();
+              renderLectures();
+            }
+          });
+        });
+
+        lectureDetailArea.querySelectorAll('[data-blk-clear-all]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-clear-all'), 10);
+            const blk = lec.blocks[idx];
+            if (blk) {
+              blk.setupBoard = createEmptyBoard(blk.boardSize || 9);
+              blk.labels = {};
+              blk.moves = [];
+              blk.step = 0;
+              saveDatabaseToStorage();
+              renderLectures();
+            }
+          });
+        });
+
+        // Import position into inline board block
+        lectureDetailArea.querySelectorAll('[data-blk-import-btn]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-import-btn'), 10);
+            const sel = lectureDetailArea.querySelector(`[data-blk-import-sel="${idx}"]`);
+            const blk = lec.blocks[idx];
+            if (blk && sel) {
+              importPositionIntoBoardBlock(blk, sel.value);
+              saveDatabaseToStorage();
+              renderLectures();
+            }
+          });
+        });
+
+        // Direct clicking on inline SVG board intersections
+        lectureDetailArea.querySelectorAll('[data-inline-board]').forEach(svgEl => {
+          const idx = parseInt(svgEl.getAttribute('data-inline-board'), 10);
+          const blk = lec.blocks[idx];
+          if (!blk) return;
+          svgEl.querySelectorAll('[data-bx]').forEach(cir => {
+            cir.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              const x = parseInt(cir.getAttribute('data-bx'), 10);
+              const y = parseInt(cir.getAttribute('data-by'), 10);
+              const em = blk.editMode || 'setup_black';
+              if (!blk.setupBoard) blk.setupBoard = createEmptyBoard(blk.boardSize || 9);
+              if (!blk.labels) blk.labels = {};
+              if (!Array.isArray(blk.moves)) blk.moves = [];
+
+              if (em === 'setup_black' || em === 'setup_white') {
+                const col = em === 'setup_black' ? 1 : 2;
+                blk.setupBoard[y][x] = (blk.setupBoard[y][x] === col) ? 0 : col;
+              } else if (em === 'label') {
+                const k = `${x},${y}`;
+                if (blk.labels[k]) {
+                  delete blk.labels[k];
+                } else {
+                  const used = new Set(Object.values(blk.labels));
+                  let ch = 'A';
+                  for (let i = 0; i < 26; i++) {
+                    const cand = String.fromCharCode(65 + i);
+                    if (!used.has(cand)) { ch = cand; break; }
+                  }
+                  blk.labels[k] = ch;
+                }
+              } else if (em === 'play_seq') {
+                const { b } = computeInlineBlockState(blk);
+                if (b[y][x] === 0) {
+                  // Truncate moves after current step if branching/recording from middle
+                  blk.moves = blk.moves.slice(0, blk.step);
+                  const nextCol = blk.moves.length === 0 ? 1 : (blk.moves[blk.moves.length - 1].color === 1 ? 2 : 1);
+                  blk.moves.push({ x, y, color: nextCol, comment: '' });
+                  blk.step = blk.moves.length;
+                }
+              }
+              saveDatabaseToStorage();
+              renderLectures();
+            });
           });
         });
       }
