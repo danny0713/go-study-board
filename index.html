@@ -66,6 +66,10 @@
             <span>4. Go Joseki</span>
             <span id="josekiCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-stone-200 text-stone-800">0</span>
           </button>
+          <button type="button" data-tab="lectures" class="module-tab px-3 py-1 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition flex items-center gap-1.5">
+            <span>5. Lecture Notes</span>
+            <span id="lectureCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-stone-200 text-stone-800">0</span>
+          </button>
         </nav>
       </div>
 
@@ -179,6 +183,18 @@
               <button type="button" id="btnJosekiLast" title="Show all moves" class="px-2 py-1 rounded-lg font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">&gt;|</button>
             </div>
 
+            <!-- Branch / Track Controls for Solutions & Joseki -->
+            <div id="branchPickerGroup" class="hidden items-center gap-1">
+              <span class="text-[11px] font-semibold text-amber-800">Track:</span>
+              <select id="branchSelect" aria-label="Select branch or track" class="px-2 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 focus:outline-none"></select>
+              <button type="button" id="btnSaveBranch" title="Save current variation as a new branch on this Solution or Joseki" class="px-2.5 py-1 rounded-lg font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition">
+                + Save Branch
+              </button>
+              <button type="button" id="btnDeleteBranch" title="Delete selected branch" class="hidden px-2 py-1 rounded-lg font-medium bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 transition">
+                Del Branch
+              </button>
+            </div>
+
             <button type="button" id="btnSaveQuestionSolution" class="hidden px-2.5 py-1 rounded-lg font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition">
               + Save Correct Sol
             </button>
@@ -192,6 +208,17 @@
               Dismiss
             </button>
           </div>
+        </div>
+
+        <!-- Overall Description Bar (for Solution, Joseki, or Branch) -->
+        <div id="solDescriptionBar" class="hidden pt-2 border-t border-amber-200/80 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2 flex-1 min-w-[240px]">
+            <span id="solDescriptionLabel" class="font-semibold text-amber-900 shrink-0">Overall Description:</span>
+            <input id="solDescriptionInput" type="text" placeholder="Write an overall explanation for this solution / joseki / branch..." class="w-full px-2.5 py-1 rounded-lg border border-amber-300 bg-white text-stone-800 focus:outline-none focus:border-amber-500">
+          </div>
+          <button type="button" id="btnSaveSolDescription" class="px-2.5 py-1 rounded-lg font-medium bg-stone-800 text-white hover:bg-stone-900 transition shrink-0">
+            Save Description
+          </button>
         </div>
 
         <!-- Per-Move Remark / Comment Bar (for Solutions & Joseki) -->
@@ -384,6 +411,46 @@
 
           <div id="josekiGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
         </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         MODULE 5: LECTURE NOTES (CONCEPTS & EXAMPLES)
+         ========================================== -->
+    <section id="moduleLectures" class="hidden flex-col gap-4">
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-sm sm:text-base font-semibold text-stone-900">Go Lecture Notes</h2>
+          <p class="text-xs text-stone-500 mt-0.5">
+            Write plain-text concept explanations and attach real board examples (and variations) directly from your Blank Board.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" id="btnNewLecture" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
+            + New Lecture Note
+          </button>
+          <button type="button" id="btnExportLectures" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+            Export JSON
+          </button>
+          <label for="inputImportLectures" class="cursor-pointer px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+            Import JSON
+          </label>
+          <input id="inputImportLectures" type="file" accept=".json,application/json" class="hidden">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+        <!-- Lecture List Sidebar -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col gap-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Lectures</span>
+            <span id="lectureListCount" class="text-xs text-stone-400">0</span>
+          </div>
+          <div id="lectureListEl" class="flex flex-col gap-1.5"></div>
+        </div>
+
+        <!-- Active Lecture Editor & Board Examples -->
+        <div id="lectureDetailArea" class="md:col-span-3 bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-stone-200 flex flex-col gap-4"></div>
       </div>
     </section>
   </div>
@@ -1671,6 +1738,157 @@
         solutionPickerGroup.classList.add('flex');
       }
 
+      function getActiveSequenceContainer() {
+        if (activeTargetType === 'joseki' && activeJosekiReplay && activeJosekiReplay.item) {
+          return activeJosekiReplay.item;
+        }
+        if ((activeTargetType === 'question' || activeTargetType === 'shape') && activeQuestionId) {
+          const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
+          return sols[activeSolutionIndex] || null;
+        }
+        return null;
+      }
+
+      function getEffectiveMoves(container, branchIdx = -1) {
+        if (!container) return [];
+        const mainMoves = Array.isArray(container.moves) ? container.moves : [];
+        if (branchIdx < 0 || !Array.isArray(container.branches) || !container.branches[branchIdx]) {
+          return mainMoves;
+        }
+        const br = container.branches[branchIdx];
+        const prefix = mainMoves.slice(0, br.fromStep || 0);
+        return [...prefix, ...(Array.isArray(br.moves) ? br.moves : [])];
+      }
+
+      function syncBranchAndDescUI() {
+        const container = getActiveSequenceContainer();
+        if (!container) {
+          branchPickerGroup.classList.add('hidden');
+          branchPickerGroup.classList.remove('flex');
+          solDescriptionBar.classList.add('hidden');
+          return;
+        }
+        if (!Array.isArray(container.branches)) container.branches = [];
+        if (activeBranchIndex >= container.branches.length) activeBranchIndex = -1;
+
+        let opts = `<option value="-1" ${activeBranchIndex === -1 ? 'selected' : ''}>Main Line</option>`;
+        container.branches.forEach((br, idx) => {
+          const label = br.name || `Branch ${idx + 1} (from #${br.fromStep || 0})`;
+          opts += `<option value="${idx}" ${activeBranchIndex === idx ? 'selected' : ''}>${label}</option>`;
+        });
+        branchSelect.innerHTML = opts;
+        branchPickerGroup.classList.remove('hidden');
+        branchPickerGroup.classList.add('flex');
+        btnDeleteBranch.classList.toggle('hidden', activeBranchIndex < 0);
+
+        const targetObj = (activeBranchIndex >= 0 && container.branches[activeBranchIndex])
+          ? container.branches[activeBranchIndex]
+          : container;
+        const descPrefix = activeBranchIndex >= 0
+          ? (targetObj.name || `Branch ${activeBranchIndex + 1}`)
+          : (activeTargetType === 'joseki' ? 'Joseki' : (container.name || 'Solution'));
+        solDescriptionLabel.textContent = `${descPrefix} Description:`;
+        solDescriptionInput.value = targetObj.description || targetObj.notes || '';
+        solDescriptionBar.classList.remove('hidden');
+      }
+
+      btnSaveSolDescription.addEventListener('click', () => {
+        const container = getActiveSequenceContainer();
+        if (!container) return;
+        const val = solDescriptionInput.value.trim();
+        if (activeBranchIndex >= 0 && container.branches && container.branches[activeBranchIndex]) {
+          container.branches[activeBranchIndex].description = val;
+        } else {
+          container.description = val;
+          if (activeTargetType === 'joseki') container.notes = val;
+        }
+        saveDatabaseToStorage();
+        renderDatabase();
+        renderShapesCatalog();
+        renderJosekiLibrary();
+        showStatus(val ? 'Saved overall description.' : 'Cleared overall description.');
+      });
+
+      solDescriptionInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          btnSaveSolDescription.click();
+        }
+      });
+
+      btnSaveBranch.addEventListener('click', () => {
+        const container = getActiveSequenceContainer();
+        if (!container) return;
+        if (moveSequence.length === 0) {
+          showStatus('Play some variation moves on the board first to save a branch.');
+          return;
+        }
+        const mainMoves = Array.isArray(container.moves) ? container.moves : [];
+        let divergeIdx = 0;
+        while (
+          divergeIdx < mainMoves.length &&
+          divergeIdx < moveSequence.length &&
+          mainMoves[divergeIdx].x === moveSequence[divergeIdx].x &&
+          mainMoves[divergeIdx].y === moveSequence[divergeIdx].y &&
+          mainMoves[divergeIdx].color === moveSequence[divergeIdx].color
+        ) {
+          divergeIdx++;
+        }
+        const branchMoves = moveSequence.slice(divergeIdx).map(m => ({ ...m, comment: m.comment || '' }));
+        if (branchMoves.length === 0) {
+          showStatus('Current moves match the Main Line — play a different move to create a branch.');
+          return;
+        }
+        if (!Array.isArray(container.branches)) container.branches = [];
+        const brName = `Branch ${container.branches.length + 1} (from #${divergeIdx})`;
+        container.branches.push({
+          name: brName,
+          fromStep: divergeIdx,
+          moves: branchMoves,
+          description: ''
+        });
+        activeBranchIndex = container.branches.length - 1;
+        saveDatabaseToStorage();
+        syncBranchAndDescUI();
+        renderDatabase();
+        renderShapesCatalog();
+        renderJosekiLibrary();
+        showStatus(`Saved ${brName} (${branchMoves.length} move${branchMoves.length === 1 ? '' : 's'}).`);
+      });
+
+      btnDeleteBranch.addEventListener('click', () => {
+        const container = getActiveSequenceContainer();
+        if (!container || activeBranchIndex < 0 || !Array.isArray(container.branches)) return;
+        const removed = container.branches[activeBranchIndex];
+        container.branches.splice(activeBranchIndex, 1);
+        activeBranchIndex = -1;
+        saveDatabaseToStorage();
+        if (activeTargetType === 'joseki' && activeJosekiReplay) {
+          applyJosekiStep(activeJosekiReplay.item, activeJosekiReplay.item.moves.length, -1);
+        } else if (activeSolutionReplay) {
+          const sols = getTargetSolutionsArray(activeSolutionReplay.targetType, activeSolutionReplay.id);
+          const len = sols[activeSolutionReplay.solIndex] ? sols[activeSolutionReplay.solIndex].moves.length : 0;
+          applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, len, -1);
+        }
+        renderDatabase();
+        renderShapesCatalog();
+        renderJosekiLibrary();
+        showStatus(`Deleted ${removed ? removed.name : 'branch'}.`);
+      });
+
+      branchSelect.addEventListener('change', () => {
+        const idx = parseInt(branchSelect.value, 10);
+        activeBranchIndex = isNaN(idx) ? -1 : idx;
+        if (activeTargetType === 'joseki' && activeJosekiReplay) {
+          const eff = getEffectiveMoves(activeJosekiReplay.item, activeBranchIndex);
+          applyJosekiStep(activeJosekiReplay.item, eff.length, activeBranchIndex);
+        } else if (activeSolutionReplay) {
+          const sols = getTargetSolutionsArray(activeSolutionReplay.targetType, activeSolutionReplay.id);
+          const eff = getEffectiveMoves(sols[activeSolutionReplay.solIndex], activeBranchIndex);
+          applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, eff.length, activeBranchIndex);
+        }
+      });
+
       function syncMoveCommentUI() {
         // Show move comment bar whenever at least 1 ordered move is on the board (or during solution/joseki replay)
         if (moveSequence.length === 0) {
@@ -1842,6 +2060,7 @@
         josekiReplayControls.classList.add('hidden');
         josekiReplayControls.classList.remove('flex');
         syncSolutionPickerUI();
+        syncBranchAndDescUI();
         syncMoveCommentUI();
 
         if (replaySol) {
@@ -2023,7 +2242,7 @@
         inputImportDb.value = '';
       });
 
-      function applyTargetSolutionStep(targetType, id, solIndex, targetStep) {
+      function applyTargetSolutionStep(targetType, id, solIndex, targetStep, branchIdx = activeBranchIndex) {
         let baseBoard = null;
         let sz = 9;
         let baseLabels = {};
@@ -2052,7 +2271,7 @@
 
         const sols = getTargetSolutionsArray(targetType, id);
         const solObj = sols[solIndex];
-        const moves = solObj && Array.isArray(solObj.moves) ? solObj.moves : [];
+        const moves = getEffectiveMoves(solObj, branchIdx);
 
         resetState(sz, false);
         board = baseBoard.map(r => [...r]);
@@ -2095,8 +2314,9 @@
         activeTargetType = targetType;
         activeQuestionId = id;
         activeSolutionIndex = solIndex;
+        activeBranchIndex = branchIdx;
         activeJosekiReplay = null;
-        activeSolutionReplay = { targetType, id, solIndex, step: clamped };
+        activeSolutionReplay = { targetType, id, solIndex, branchIndex: branchIdx, step: clamped };
 
         const solName = solObj ? solObj.name : `sol${solIndex + 1}`;
         josekiStepLabel.textContent = `${solName}: ${clamped} / ${moves.length}`;
@@ -2590,15 +2810,16 @@
         inputImportJoseki.value = '';
       });
 
-      function applyJosekiStep(item, targetStep) {
+      function applyJosekiStep(item, targetStep, branchIdx = activeBranchIndex) {
         const sz = item.boardSize || 19;
         resetState(sz, false);
-        const clamped = Math.max(0, Math.min(targetStep, item.moves.length));
+        const moves = getEffectiveMoves(item, branchIdx);
+        const clamped = Math.max(0, Math.min(targetStep, moves.length));
         setMode('alternate');
         showNumbers = true;
 
         for (let i = 0; i < clamped; i++) {
-          const mv = item.moves[i];
+          const mv = moves[i];
           if (board[mv.y] && board[mv.y][mv.x] === 0) {
             board[mv.y][mv.x] = mv.color;
             const opp = mv.color === 1 ? 2 : 1;
@@ -2628,19 +2849,21 @@
         }
 
         activeTargetType = 'joseki';
-        activeJosekiReplay = { item, step: clamped };
+        activeBranchIndex = branchIdx;
+        activeJosekiReplay = { item, branchIndex: branchIdx, step: clamped };
         activeSolutionReplay = null;
-        josekiStepLabel.textContent = `${clamped} / ${item.moves.length}`;
+        josekiStepLabel.textContent = `${clamped} / ${moves.length}`;
         josekiReplayControls.classList.remove('hidden');
         josekiReplayControls.classList.add('flex');
         solutionPickerGroup.classList.add('hidden');
         solutionPickerGroup.classList.remove('flex');
         btnSaveQuestionSolution.classList.add('hidden');
           btnSaveWrongSolution.classList.add('hidden');
+        syncBranchAndDescUI();
         syncMoveCommentUI();
 
-        if (clamped > 0 && item.moves[clamped - 1] && item.moves[clamped - 1].comment) {
-          showStatus(`Move #${clamped}: ${item.moves[clamped - 1].comment}`);
+        if (clamped > 0 && moves[clamped - 1] && moves[clamped - 1].comment) {
+          showStatus(`Move #${clamped}: ${moves[clamped - 1].comment}`);
         }
         updateUI();
         draw();
@@ -2649,7 +2872,8 @@
       function loadJosekiToBoard(jId) {
         const item = josekiList.find(j => j.id === jId);
         if (!item) return;
-        applyJosekiStep(item, item.moves.length);
+        activeBranchIndex = -1;
+        applyJosekiStep(item, item.moves.length, -1);
         studyBaseline = {
           title: item.title,
           subtitle: item.notes || `${item.moves.length} moves`,
@@ -2676,11 +2900,13 @@
         else if (activeSolutionReplay) applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, activeSolutionReplay.step + 1);
       });
       btnJosekiLast.addEventListener('click', () => {
-        if (activeJosekiReplay) applyJosekiStep(activeJosekiReplay.item, activeJosekiReplay.item.moves.length);
-        else if (activeSolutionReplay) {
+        if (activeJosekiReplay) {
+          const eff = getEffectiveMoves(activeJosekiReplay.item, activeBranchIndex);
+          applyJosekiStep(activeJosekiReplay.item, eff.length, activeBranchIndex);
+        } else if (activeSolutionReplay) {
           const sols = getTargetSolutionsArray(activeSolutionReplay.targetType, activeSolutionReplay.id);
-          const len = sols[activeSolutionReplay.solIndex] ? sols[activeSolutionReplay.solIndex].moves.length : 0;
-          applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, len);
+          const eff = getEffectiveMoves(sols[activeSolutionReplay.solIndex], activeBranchIndex);
+          applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, eff.length, activeBranchIndex);
         }
       });
 
@@ -2825,6 +3051,265 @@
               saveDatabaseToStorage();
               renderJosekiLibrary();
             }
+          });
+        });
+      }
+
+      // ==========================================
+      // MODULE 5: LECTURE NOTES (CONCEPTS & EXAMPLES)
+      // ==========================================
+      function createNewLecture() {
+        const lec = {
+          id: 'lec_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          title: `Lecture Note #${lectures.length + 1}`,
+          topic: 'General Concepts',
+          content: '',
+          examples: [],
+          updatedAt: new Date().toLocaleDateString()
+        };
+        lectures.unshift(lec);
+        selectedLectureId = lec.id;
+        saveDatabaseToStorage();
+        updateUI();
+        renderLectures();
+      }
+
+      btnNewLecture.addEventListener('click', createNewLecture);
+
+      btnExportLectures.addEventListener('click', () => {
+        const payload = JSON.stringify({ lectures }, null, 2);
+        const blob = new Blob([payload], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'go_lecture_notes.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+
+      inputImportLectures.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(reader.result);
+            if (Array.isArray(parsed.lectures)) {
+              lectures = [...parsed.lectures, ...lectures];
+              if (lectures.length > 0 && !selectedLectureId) selectedLectureId = lectures[0].id;
+              saveDatabaseToStorage();
+              updateUI();
+              renderLectures();
+            }
+          } catch (_) {}
+        };
+        reader.readAsText(file);
+        inputImportLectures.value = '';
+      });
+
+      function loadLectureExampleToBoard(lecId, exIdx) {
+        const lec = lectures.find(l => l.id === lecId);
+        if (!lec || !lec.examples || !lec.examples[exIdx]) return;
+        const ex = lec.examples[exIdx];
+        resetState(ex.boardSize || 19, false);
+        board = ex.board.map(r => [...r]);
+        moveNums = ex.moveNums ? ex.moveNums.map(r => [...r]) : createEmptyBoard(boardSize);
+        moveSequence = Array.isArray(ex.moveSequence) ? ex.moveSequence.map(m => ({ ...m })) : [];
+        labels = { ...(ex.labels || {}) };
+        nextColor = ex.nextColor || 1;
+        moveCounter = moveSequence.length;
+        showNumbers = moveSequence.length > 0;
+        setMode('alternate');
+
+        activeTargetType = null;
+        activeQuestionId = null;
+        activeJosekiReplay = null;
+        activeSolutionReplay = null;
+        studyBaseline = {
+          title: `${lec.title} — ${ex.caption || 'Example'}`,
+          subtitle: 'Lecture Example',
+          snapshot: cloneState()
+        };
+        activeStudyTitle.textContent = `Lecture Example: ${ex.caption || 'Board Diagram'}`;
+        activeDifficultyBadge.classList.add('hidden');
+        activeStudySub.textContent = `(from "${lec.title}")`;
+        activeStudyBar.classList.remove('hidden');
+        josekiReplayControls.classList.add('hidden');
+        josekiReplayControls.classList.remove('flex');
+        solutionPickerGroup.classList.add('hidden');
+        solutionPickerGroup.classList.remove('flex');
+        branchPickerGroup.classList.add('hidden');
+        branchPickerGroup.classList.remove('flex');
+        btnSaveQuestionSolution.classList.add('hidden');
+        btnSaveWrongSolution.classList.add('hidden');
+        solDescriptionBar.classList.add('hidden');
+        syncMoveCommentUI();
+
+        switchTab('board');
+        showStatus(`Loaded lecture example "${ex.caption || 'Board Diagram'}". Play variations freely on the board!`);
+        updateUI();
+        draw();
+      }
+
+      function renderLectures() {
+        lectureListCount.textContent = String(lectures.length);
+
+        if (lectures.length === 0) {
+          lectureListEl.innerHTML = `<div class="text-xs text-stone-400 py-2">No lectures yet.</div>`;
+          lectureDetailArea.innerHTML = `
+            <div class="py-10 text-center flex flex-col items-center gap-3">
+              <p class="text-sm font-semibold text-stone-700">No lecture notes yet</p>
+              <p class="text-xs text-stone-500 max-w-md">
+                Create your first lecture note to write plain-text Go concepts and attach real board examples and variations directly from your Blank Board.
+              </p>
+              <button type="button" id="btnEmptyCreateLec" class="px-4 py-2 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
+                + Create First Lecture Note
+              </button>
+            </div>
+          `;
+          const emptyBtn = document.getElementById('btnEmptyCreateLec');
+          if (emptyBtn) emptyBtn.addEventListener('click', createNewLecture);
+          return;
+        }
+
+        if (!selectedLectureId || !lectures.some(l => l.id === selectedLectureId)) {
+          selectedLectureId = lectures[0].id;
+        }
+
+        lectureListEl.innerHTML = lectures.map(l => {
+          const active = l.id === selectedLectureId;
+          return `
+            <button type="button" data-select-lec="${l.id}" class="${active ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full text-left px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex flex-col gap-0.5 transition">
+              <span class="truncate font-semibold">${l.title || 'Untitled Lecture'}</span>
+              <span class="text-[11px] opacity-75 truncate">${l.topic || 'General'} · ${(l.examples || []).length} example${(l.examples || []).length === 1 ? '' : 's'}</span>
+            </button>
+          `;
+        }).join('');
+
+        lectureListEl.querySelectorAll('[data-select-lec]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            selectedLectureId = btn.getAttribute('data-select-lec');
+            renderLectures();
+          });
+        });
+
+        const lec = lectures.find(l => l.id === selectedLectureId);
+        if (!lec) return;
+        if (!Array.isArray(lec.examples)) lec.examples = [];
+
+        const examplesHtml = lec.examples.length > 0
+          ? lec.examples.map((ex, idx) => {
+              const thumb = renderMiniBoardSvg(ex.board, ex.boardSize || 19, { ...(ex.labels || {}), __moveNums: ex.moveNums }, null);
+              return `
+                <div class="bg-stone-50 rounded-xl p-3 border border-stone-200 flex flex-col gap-2">
+                  <div class="flex items-start justify-between gap-2">
+                    <span class="text-xs font-semibold text-stone-800">${ex.caption || `Example #${idx + 1}`}</span>
+                    <button type="button" data-del-ex="${idx}" class="text-[11px] text-stone-400 hover:text-red-600">Remove</button>
+                  </div>
+                  <div class="flex justify-center">${thumb}</div>
+                  ${ex.note ? `<p class="text-xs text-stone-600 leading-relaxed">${ex.note}</p>` : ''}
+                  <button type="button" data-load-ex="${idx}" class="w-full py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
+                    Load Example to Board &rarr;
+                  </button>
+                </div>
+              `;
+            }).join('')
+          : `<div class="sm:col-span-2 text-xs text-stone-400 border border-dashed border-stone-200 rounded-xl p-5 text-center">
+              Set up any board position or variation on <strong>1. Blank Board</strong>, then click <strong>+ Attach Current Board as Example</strong> below.
+            </div>`;
+
+        lectureDetailArea.innerHTML = `
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-stone-100">
+            <div class="flex-1 min-w-[220px] grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input id="lecTitleInput" type="text" value="${(lec.title || '').replace(/"/g, '&quot;')}" placeholder="Lecture Title" class="sm:col-span-2 text-sm font-semibold px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
+              <input id="lecTopicInput" type="text" value="${(lec.topic || '').replace(/"/g, '&quot;')}" placeholder="Topic (e.g. Life & Death)" class="text-xs font-medium px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-700 focus:outline-none focus:bg-white focus:border-stone-400">
+            </div>
+            <button type="button" id="btnDeleteLecture" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 border border-red-200 transition">
+              Delete Lecture
+            </button>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label for="lecContentTextarea" class="text-xs font-semibold text-stone-700">Concept Explanation (Plain Text)</label>
+            <textarea id="lecContentTextarea" rows="8" placeholder="Write your Go concept explanation, rules of thumb, and key ideas here..." class="w-full text-xs sm:text-sm leading-relaxed p-3 rounded-xl border border-stone-200 bg-stone-50 text-stone-800 focus:outline-none focus:bg-white focus:border-stone-400">${lec.content || ''}</textarea>
+          </div>
+
+          <div class="flex flex-col gap-3 pt-2 border-t border-stone-100">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs font-semibold text-stone-700">Board Examples &amp; Variations (${lec.examples.length})</span>
+              <div class="flex flex-wrap items-center gap-1.5">
+                <input id="exCaptionInput" type="text" placeholder="Example caption (e.g. Vital Point at D7)" class="text-xs px-2.5 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-800 focus:outline-none focus:bg-white">
+                <button type="button" id="btnAttachCurrentBoard" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+                  + Attach Current Board as Example
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${examplesHtml}</div>
+          </div>
+        `;
+
+        const lecTitleInput = document.getElementById('lecTitleInput');
+        const lecTopicInput = document.getElementById('lecTopicInput');
+        const lecContentTextarea = document.getElementById('lecContentTextarea');
+        const btnDeleteLecture = document.getElementById('btnDeleteLecture');
+        const btnAttachCurrentBoard = document.getElementById('btnAttachCurrentBoard');
+        const exCaptionInput = document.getElementById('exCaptionInput');
+
+        lecTitleInput.addEventListener('input', () => {
+          lec.title = lecTitleInput.value;
+          saveDatabaseToStorage();
+          const activeBtn = lectureListEl.querySelector(`[data-select-lec="${lec.id}"] span:first-child`);
+          if (activeBtn) activeBtn.textContent = lec.title || 'Untitled Lecture';
+        });
+        lecTopicInput.addEventListener('input', () => {
+          lec.topic = lecTopicInput.value;
+          saveDatabaseToStorage();
+        });
+        lecContentTextarea.addEventListener('input', () => {
+          lec.content = lecContentTextarea.value;
+          saveDatabaseToStorage();
+        });
+
+        btnDeleteLecture.addEventListener('click', () => {
+          lectures = lectures.filter(l => l.id !== lec.id);
+          selectedLectureId = lectures.length > 0 ? lectures[0].id : null;
+          saveDatabaseToStorage();
+          updateUI();
+          renderLectures();
+        });
+
+        btnAttachCurrentBoard.addEventListener('click', () => {
+          const cap = exCaptionInput.value.trim() || `Example #${lec.examples.length + 1}`;
+          lec.examples.push({
+            caption: cap,
+            boardSize,
+            board: board.map(r => [...r]),
+            moveNums: moveNums.map(r => [...r]),
+            moveSequence: moveSequence.map(m => ({ ...m })),
+            labels: { ...labels },
+            nextColor,
+            note: statusMsgEl.textContent || ''
+          });
+          saveDatabaseToStorage();
+          renderLectures();
+          showStatus(`Attached "${cap}" to lecture "${lec.title}".`);
+        });
+
+        lectureDetailArea.querySelectorAll('[data-load-ex]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-load-ex'), 10);
+            loadLectureExampleToBoard(lec.id, idx);
+          });
+        });
+
+        lectureDetailArea.querySelectorAll('[data-del-ex]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-del-ex'), 10);
+            lec.examples.splice(idx, 1);
+            saveDatabaseToStorage();
+            renderLectures();
           });
         });
       }
