@@ -42,7 +42,7 @@
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-3 sm:p-5">
-  <div class="w-full max-w-5xl flex flex-col gap-3">
+  <div id="appShell" class="w-full max-w-6xl flex flex-col gap-3">
     <!-- Top Header & Module Switcher -->
     <div class="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl px-4 py-2.5 shadow-sm border border-stone-200">
       <div class="flex items-center gap-3">
@@ -439,18 +439,18 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
-        <!-- Lecture List Sidebar -->
-        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col gap-2.5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        <!-- W3Schools-style Left Chapter Sidebar -->
+        <div id="lectureSidebar" class="lg:col-span-3 bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col gap-2.5 lg:sticky lg:top-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Saved Notes</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Chapters / Notes</span>
             <span id="lectureListCount" class="text-xs text-stone-400">0</span>
           </div>
           <div id="lectureListEl" class="flex flex-col gap-1.5"></div>
         </div>
 
-        <!-- Active Lecture Editor & Board Examples -->
-        <div id="lectureDetailArea" class="md:col-span-3 bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-stone-200 flex flex-col gap-4"></div>
+        <!-- Full-Width Tutorial Page Area -->
+        <div id="lectureDetailArea" class="lg:col-span-9 bg-white rounded-xl p-5 sm:p-7 shadow-sm border border-stone-200 flex flex-col gap-5"></div>
       </div>
     </section>
   </div>
@@ -3108,8 +3108,67 @@
       }
 
       // ==========================================
-      // MODULE 5: STUDY NOTEBOOK (W3SCHOOLS-STYLE INTERLEAVED TEXT & LIVE BOARDS)
+      // MODULE 5: STUDY NOTEBOOK (HASH-ROUTED W3SCHOOLS TUTORIAL PAGES)
       // ==========================================
+      let lectureReadMode = false; // false = Edit Mode, true = Clean Read Mode
+
+      function setNoteHash(lecId) {
+        try {
+          const targetHash = lecId ? `#/note/${lecId}` : '#/';
+          if (window.location.hash !== targetHash) {
+            window.location.hash = targetHash;
+          }
+        } catch (_) {}
+      }
+
+      function handleHashRoute() {
+        try {
+          const h = window.location.hash || '';
+          if (h.startsWith('#/note/')) {
+            const targetId = h.slice(7).trim();
+            if (targetId && lectures.some(l => l.id === targetId)) {
+              selectedLectureId = targetId;
+              switchTab('lectures');
+            }
+          }
+        } catch (_) {}
+      }
+
+      window.addEventListener('hashchange', handleHashRoute);
+
+      function formatNoteTextHtml(raw) {
+        if (!raw || !raw.trim()) return '<p class="text-stone-400 italic text-sm">Empty section.</p>';
+        const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const lines = raw.split('\n');
+        let html = '';
+        let inList = false;
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) {
+            if (inList) { html += '</ul>'; inList = false; }
+            continue;
+          }
+          if (line.startsWith('### ')) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += `<h4 class="text-sm font-bold text-stone-900 mt-3 mb-1">${esc(line.slice(4))}</h4>`;
+          } else if (line.startsWith('## ')) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += `<h3 class="text-base font-bold text-stone-900 mt-3 mb-1">${esc(line.slice(3))}</h3>`;
+          } else if (line.startsWith('- ') || line.startsWith('* ')) {
+            if (!inList) { html += '<ul class="list-disc pl-5 space-y-1 text-sm text-stone-700">'; inList = true; }
+            const body = esc(line.slice(2)).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            html += `<li>${body}</li>`;
+          } else {
+            if (inList) { html += '</ul>'; inList = false; }
+            const body = esc(line).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            html += `<p class="text-sm text-stone-700 leading-relaxed mb-2">${body}</p>`;
+          }
+        }
+        if (inList) html += '</ul>';
+        return html;
+      }
+
       function normalizeLectureBlocks(lec) {
         if (!Array.isArray(lec.blocks)) {
           lec.blocks = [];
@@ -3210,34 +3269,40 @@
         return { b, nums, targetStep, totalMoves: moves.length };
       }
 
+      // Full-size interactive SVG board (520px viewBox, scales cleanly up to 560px+ for 19x19!)
       function renderInteractiveBlockSvg(blk, blockIndex) {
         const sz = blk.boardSize || 9;
         const { b, nums } = computeInlineBlockState(blk);
-        const svgW = 280;
-        const pad = 24;
+        const svgW = 520;
+        const pad = 34;
         const step = (svgW - 2 * pad) / (sz - 1);
-        const r = Math.max(5, step * 0.45);
+        const r = Math.max(8, step * 0.46);
         const end = pad + (sz - 1) * step;
 
-        let out = `<svg data-inline-board="${blockIndex}" viewBox="0 0 ${svgW} ${svgW}" class="w-64 h-64 sm:w-72 sm:h-72 rounded-xl border border-amber-300 shadow-sm cursor-pointer select-none" style="background:#dfb164" xmlns="http://www.w3.org/2000/svg">`;
+        let out = `<svg data-inline-board="${blockIndex}" viewBox="0 0 ${svgW} ${svgW}" class="w-full max-w-[540px] aspect-square rounded-xl border border-amber-300 shadow-md cursor-pointer select-none" style="background:#dfb164" xmlns="http://www.w3.org/2000/svg">`;
 
         // Grid lines
         for (let i = 0; i < sz; i++) {
           const pos = (pad + i * step).toFixed(1);
-          out += `<line x1="${pad}" y1="${pos}" x2="${end}" y2="${pos}" stroke="#3b2b13" stroke-width="1"/>`;
-          out += `<line x1="${pos}" y1="${pad}" x2="${pos}" y2="${end}" stroke="#3b2b13" stroke-width="1"/>`;
+          out += `<line x1="${pad}" y1="${pos}" x2="${end}" y2="${pos}" stroke="#3b2b13" stroke-width="1.2"/>`;
+          out += `<line x1="${pos}" y1="${pad}" x2="${pos}" y2="${end}" stroke="#3b2b13" stroke-width="1.2"/>`;
         }
+        out += `<rect x="${pad}" y="${pad}" width="${(end - pad).toFixed(1)}" height="${(end - pad).toFixed(1)}" fill="none" stroke="#3b2b13" stroke-width="1.8"/>`;
 
         // Coordinates
+        const coordFont = sz >= 19 ? 10 : 12;
         for (let i = 0; i < sz; i++) {
           const pos = (pad + i * step).toFixed(1);
-          out += `<text x="${pos}" y="12" font-size="8.5" font-weight="600" text-anchor="middle" fill="#4a3516">${COLS[i]}</text>`;
-          out += `<text x="10" y="${(pad + i * step + 3).toFixed(1)}" font-size="8.5" font-weight="600" text-anchor="middle" fill="#4a3516">${sz - i}</text>`;
+          out += `<text x="${pos}" y="17" font-size="${coordFont}" font-weight="600" text-anchor="middle" fill="#4a3516">${COLS[i]}</text>`;
+          out += `<text x="${pos}" y="${(svgW - 10)}" font-size="${coordFont}" font-weight="600" text-anchor="middle" fill="#4a3516">${COLS[i]}</text>`;
+          out += `<text x="14" y="${(pad + i * step + 4).toFixed(1)}" font-size="${coordFont}" font-weight="600" text-anchor="middle" fill="#4a3516">${sz - i}</text>`;
+          out += `<text x="${(svgW - 14)}" y="${(pad + i * step + 4).toFixed(1)}" font-size="${coordFont}" font-weight="600" text-anchor="middle" fill="#4a3516">${sz - i}</text>`;
         }
 
         // Star points
+        const starR = sz >= 19 ? 3.2 : 4;
         for (const [sx, sy] of getStarPoints(sz)) {
-          out += `<circle cx="${(pad + sx * step).toFixed(1)}" cy="${(pad + sy * step).toFixed(1)}" r="2.2" fill="#3b2b13"/>`;
+          out += `<circle cx="${(pad + sx * step).toFixed(1)}" cy="${(pad + sy * step).toFixed(1)}" r="${starR}" fill="#3b2b13"/>`;
         }
 
         // Stones & move numbers
@@ -3248,11 +3313,12 @@
               const cx = (pad + x * step).toFixed(1);
               const cy = (pad + y * step).toFixed(1);
               const fill = c === 1 ? '#1c1c1c' : '#ffffff';
-              out += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="${fill}" stroke="#3b2b13" stroke-width="1"/>`;
+              out += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="${fill}" stroke="#3b2b13" stroke-width="1.2"/>`;
               const n = nums[y][x];
               if (n > 0) {
                 const tCol = c === 1 ? '#ffffff' : '#1c1c1c';
-                out += `<text x="${cx}" y="${(parseFloat(cy) + 3).toFixed(1)}" font-size="${Math.max(7, r * 0.85).toFixed(1)}" font-weight="700" text-anchor="middle" fill="${tCol}">${n}</text>`;
+                const numFont = Math.max(9, r * 0.85).toFixed(1);
+                out += `<text x="${cx}" y="${(parseFloat(cy) + parseFloat(numFont) * 0.35).toFixed(1)}" font-size="${numFont}" font-weight="700" text-anchor="middle" fill="${tCol}">${n}</text>`;
               }
             }
           }
@@ -3263,13 +3329,14 @@
           const [lx, ly] = k.split(',').map(Number);
           if (lx < sz && ly < sz) {
             const cx = (pad + lx * step).toFixed(1);
-            const cy = (pad + ly * step + 3.2).toFixed(1);
+            const lblFont = Math.max(10, r * 0.92).toFixed(1);
+            const cy = (pad + ly * step + parseFloat(lblFont) * 0.35).toFixed(1);
             const onStone = b[ly][lx];
             if (onStone === 0) {
               out += `<circle cx="${cx}" cy="${(pad + ly * step).toFixed(1)}" r="${(r * 0.65).toFixed(1)}" fill="#dfb164"/>`;
             }
             const col = onStone === 1 ? '#ffffff' : '#1f2937';
-            out += `<text x="${cx}" y="${cy}" font-size="${Math.max(8, r * 0.9).toFixed(1)}" font-weight="700" text-anchor="middle" fill="${col}">${ch}</text>`;
+            out += `<text x="${cx}" y="${cy}" font-size="${lblFont}" font-weight="700" text-anchor="middle" fill="${col}">${ch}</text>`;
           }
         }
 
@@ -3294,15 +3361,20 @@
           topic: 'Fundamentals',
           blocks: [
             {
+              id: 'blk_' + Date.now() + '_h1',
+              type: 'heading',
+              text: 'Part 1: Core Concept'
+            },
+            {
               id: 'blk_' + Date.now() + '_1',
               type: 'text',
               heading: 'Concept 1',
-              text: 'Write your explanation for Concept 1 here...'
+              text: 'Write your explanation here. Use **bold** or start lines with "- " for bullet points.'
             },
             {
               id: 'blk_' + Date.now() + '_2',
               type: 'board',
-              caption: 'Example 1 — Interactive Board',
+              caption: 'Example 1 — Full-Size Interactive Board',
               boardSize: 9,
               setupBoard: createEmptyBoard(9),
               labels: {},
@@ -3315,6 +3387,8 @@
         };
         lectures.unshift(lec);
         selectedLectureId = lec.id;
+        lectureReadMode = false;
+        setNoteHash(lec.id);
         saveDatabaseToStorage();
         updateUI();
         renderLectures();
@@ -3441,10 +3515,10 @@
         if (lectures.length === 0) {
           lectureListEl.innerHTML = `<div class="text-xs text-stone-400 py-2">No pages yet.</div>`;
           lectureDetailArea.innerHTML = `
-            <div class="py-10 text-center flex flex-col items-center gap-3">
-              <p class="text-sm font-semibold text-stone-700">Your Go Study Notebook is empty</p>
-              <p class="text-xs text-stone-500 max-w-md">
-                Create a tutorial page where you can alternate plain-text concept explanations and interactive Go boards right inside the page (just like W3Schools).
+            <div class="py-12 text-center flex flex-col items-center gap-3">
+              <p class="text-base font-semibold text-stone-800">Your Go Study Notebook is empty</p>
+              <p class="text-xs sm:text-sm text-stone-500 max-w-md">
+                Create a W3Schools-style tutorial page where you can freely combine Headings, Text Explanations, and Full-Size Interactive Go Boards—each with its own bookmarkable <code class="px-1.5 py-0.5 bg-stone-100 rounded">#/note/...</code> URL.
               </p>
               <button type="button" id="btnEmptyCreateLec" class="px-4 py-2 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
                 + Create First Note Page
@@ -3474,6 +3548,7 @@
         lectureListEl.querySelectorAll('[data-select-lec]').forEach(btn => {
           btn.addEventListener('click', () => {
             selectedLectureId = btn.getAttribute('data-select-lec');
+            setNoteHash(selectedLectureId);
             renderLectures();
           });
         });
@@ -3491,157 +3566,237 @@
           const moveDownBtn = idx < lec.blocks.length - 1
             ? `<button type="button" data-blk-down="${idx}" title="Move block down" class="px-2 py-0.5 rounded border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 text-[11px]">↓</button>`
             : '';
+          const insertBarHtml = lectureReadMode ? '' : `
+            <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-stone-200/70">
+              <span class="text-[11px] text-stone-400 mr-1">Insert below:</span>
+              <button type="button" data-insert-after="${idx}" data-insert-type="heading" class="px-2.5 py-1 rounded-md text-[11px] font-medium border border-stone-300 bg-white text-stone-700 hover:bg-stone-100 transition">+ Heading</button>
+              <button type="button" data-insert-after="${idx}" data-insert-type="text" class="px-2.5 py-1 rounded-md text-[11px] font-medium border border-stone-300 bg-white text-stone-700 hover:bg-stone-100 transition">+ Text</button>
+              <button type="button" data-insert-after="${idx}" data-insert-type="board" class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-600 text-white hover:bg-amber-700 transition">+ Full-Size Board</button>
+            </div>
+          `;
 
-          if (blk.type === 'text') {
+          if (blk.type === 'heading') {
+            if (lectureReadMode) {
+              return `<h2 class="text-xl font-bold text-stone-900 pt-4 pb-1 border-b border-stone-200">${blk.text || 'Section Heading'}</h2>`;
+            }
             return `
-              <div class="bg-stone-50/70 rounded-xl p-4 border border-stone-200 flex flex-col gap-2.5">
+              <div class="bg-stone-100/80 rounded-xl p-3 border border-stone-200 flex flex-col gap-2">
                 <div class="flex items-center justify-between gap-2">
-                  <input type="text" data-blk-heading="${idx}" value="${(blk.heading || '').replace(/"/g, '&quot;')}" placeholder="Section Heading (e.g. Concept 1: Why Bent Four Lives)" class="flex-1 text-sm font-semibold px-2.5 py-1 rounded-lg border border-stone-200 bg-white text-stone-900 focus:outline-none focus:border-stone-400">
+                  <span class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Section Heading</span>
                   <div class="flex items-center gap-1">
                     ${moveUpBtn}
                     ${moveDownBtn}
                     <button type="button" data-blk-del="${idx}" class="px-2 py-0.5 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Delete</button>
                   </div>
                 </div>
-                <textarea data-blk-text="${idx}" rows="4" placeholder="Write your concept explanation here..." class="w-full text-xs sm:text-sm leading-relaxed p-3 rounded-lg border border-stone-200 bg-white text-stone-800 focus:outline-none focus:border-stone-400">${blk.text || ''}</textarea>
-                <div class="flex items-center gap-2 pt-1">
-                  <button type="button" data-insert-after="${idx}" data-insert-type="board" class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-600 text-white hover:bg-amber-700 transition">
-                    + Insert Interactive Board Below
-                  </button>
-                  <button type="button" data-insert-after="${idx}" data-insert-type="text" class="px-2.5 py-1 rounded-md text-[11px] font-medium border border-stone-300 bg-white text-stone-700 hover:bg-stone-100 transition">
-                    + Insert Text Section Below
-                  </button>
-                </div>
+                <input type="text" data-blk-heading-only="${idx}" value="${(blk.text || '').replace(/"/g, '&quot;')}" placeholder="Section Heading (e.g. Part 1: Classic Eye Shapes)" class="text-base font-bold px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-stone-900 focus:outline-none focus:border-stone-500">
+                ${insertBarHtml}
               </div>
             `;
           }
 
-          // Interactive Board Block rendered directly inside the Note Page
+          if (blk.type === 'text') {
+            if (lectureReadMode) {
+              return `
+                <div class="py-1">
+                  ${blk.heading ? `<h3 class="text-base font-semibold text-stone-900 mb-1.5">${blk.heading}</h3>` : ''}
+                  <div>${formatNoteTextHtml(blk.text || '')}</div>
+                </div>
+              `;
+            }
+            return `
+              <div class="bg-stone-50/80 rounded-xl p-4 border border-stone-200 flex flex-col gap-2.5">
+                <div class="flex items-center justify-between gap-2">
+                  <input type="text" data-blk-heading="${idx}" value="${(blk.heading || '').replace(/"/g, '&quot;')}" placeholder="Sub-heading (optional)" class="flex-1 text-sm font-semibold px-2.5 py-1 rounded-lg border border-stone-200 bg-white text-stone-900 focus:outline-none focus:border-stone-400">
+                  <div class="flex items-center gap-1">
+                    ${moveUpBtn}
+                    ${moveDownBtn}
+                    <button type="button" data-blk-del="${idx}" class="px-2 py-0.5 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Delete</button>
+                  </div>
+                </div>
+                <textarea data-blk-text="${idx}" rows="4" placeholder="Write your concept explanation here (supports **bold** and - bullet points)..." class="w-full text-xs sm:text-sm leading-relaxed p-3 rounded-lg border border-stone-200 bg-white text-stone-800 focus:outline-none focus:border-stone-400">${blk.text || ''}</textarea>
+                ${insertBarHtml}
+              </div>
+            `;
+          }
+
+          // Full-Size Interactive Board Block rendered directly inside the Note Page
           const { targetStep, totalMoves } = computeInlineBlockState(blk);
           const curMoveComment = (targetStep > 0 && blk.moves && blk.moves[targetStep - 1])
             ? (blk.moves[targetStep - 1].comment || '')
             : '';
           const em = blk.editMode || 'setup_black';
 
-          return `
-            <div class="bg-amber-50/50 rounded-xl p-4 border border-amber-200 flex flex-col gap-3">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <input type="text" data-blk-caption="${idx}" value="${(blk.caption || '').replace(/"/g, '&quot;')}" placeholder="Example Caption (e.g. Example 1: Black Plays the Vital Point)" class="flex-1 min-w-[200px] text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-lg border border-amber-300 bg-white text-stone-900 focus:outline-none">
+          const editorToolboxHtml = lectureReadMode ? '' : `
+            <div class="w-full max-w-[540px] bg-stone-50 rounded-lg p-3 border border-stone-200 flex flex-col gap-2 text-xs">
+              <div class="flex items-center justify-between flex-wrap gap-1">
+                <span class="font-semibold text-stone-700">Click Board to Place:</span>
                 <div class="flex items-center gap-1">
-                  ${moveUpBtn}
-                  ${moveDownBtn}
-                  <button type="button" data-blk-del="${idx}" class="px-2 py-0.5 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Delete</button>
+                  <button type="button" data-blk-size="${idx}" data-sz="9" class="${(blk.boardSize || 9) === 9 ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-0.5 rounded border border-stone-200 text-[11px]">9×9</button>
+                  <button type="button" data-blk-size="${idx}" data-sz="13" class="${blk.boardSize === 13 ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-0.5 rounded border border-stone-200 text-[11px]">13×13</button>
+                  <button type="button" data-blk-size="${idx}" data-sz="19" class="${blk.boardSize === 19 ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-0.5 rounded border border-stone-200 text-[11px]">19×19</button>
                 </div>
               </div>
-
-              <!-- Inline Board + Controls Side-by-Side (W3Schools Example Card) -->
-              <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center bg-white rounded-xl p-3.5 border border-stone-200">
-                <div class="lg:col-span-6 flex justify-center">
-                  ${renderInteractiveBlockSvg(blk, idx)}
-                </div>
-
-                <div class="lg:col-span-6 flex flex-col gap-2.5 text-xs">
-                  <!-- Step-by-Step Variation Replay right inside the note -->
-                  <div class="bg-stone-50 rounded-lg p-2.5 border border-stone-200 flex flex-col gap-2">
-                    <div class="flex items-center justify-between">
-                      <span class="font-semibold text-stone-700">Variation Replay</span>
-                      <span class="font-mono font-semibold text-stone-900">Move ${targetStep} / ${totalMoves}</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                      <button type="button" data-blk-step="${idx}" data-step-to="0" class="px-2.5 py-1 rounded bg-white border border-stone-300 font-semibold hover:bg-stone-100">|&lt;</button>
-                      <button type="button" data-blk-step="${idx}" data-step-to="${targetStep - 1}" class="px-3 py-1 rounded bg-white border border-stone-300 font-semibold hover:bg-stone-100">&lt; Prev</button>
-                      <button type="button" data-blk-step="${idx}" data-step-to="${targetStep + 1}" class="px-3 py-1 rounded bg-white border border-stone-300 font-semibold hover:bg-stone-100">Next &gt;</button>
-                      <button type="button" data-blk-step="${idx}" data-step-to="${totalMoves}" class="px-2.5 py-1 rounded bg-white border border-stone-300 font-semibold hover:bg-stone-100">&gt;|</button>
-                    </div>
-                    <div class="flex items-center gap-1.5 pt-1">
-                      <input type="text" data-blk-mv-comment="${idx}" value="${curMoveComment.replace(/"/g, '&quot;')}" placeholder="${targetStep > 0 ? `Remark for Move #${targetStep}...` : 'Play or step to a move (1, 2...) to add a move remark'}" ${targetStep === 0 ? 'disabled' : ''} class="w-full px-2 py-1 rounded border border-stone-200 bg-white text-stone-800 disabled:opacity-50">
-                    </div>
-                  </div>
-
-                  <!-- Direct Inline Stone Placement & Import Controls -->
-                  <div class="bg-stone-50 rounded-lg p-2.5 border border-stone-200 flex flex-col gap-2">
-                    <div class="flex items-center justify-between flex-wrap gap-1">
-                      <span class="font-semibold text-stone-700">Click Board to Place:</span>
-                      <div class="flex items-center gap-1">
-                        <button type="button" data-blk-size="${idx}" data-sz="9" class="${(blk.boardSize || 9) === 9 ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-0.5 rounded border border-stone-200 text-[11px]">9×9</button>
-                        <button type="button" data-blk-size="${idx}" data-sz="13" class="${blk.boardSize === 13 ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-0.5 rounded border border-stone-200 text-[11px]">13×13</button>
-                        <button type="button" data-blk-size="${idx}" data-sz="19" class="${blk.boardSize === 19 ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-0.5 rounded border border-stone-200 text-[11px]">19×19</button>
-                      </div>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-1">
-                      <button type="button" data-blk-mode="${idx}" data-m="setup_black" class="${em === 'setup_black' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Setup Black</button>
-                      <button type="button" data-blk-mode="${idx}" data-m="setup_white" class="${em === 'setup_white' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Setup White</button>
-                      <button type="button" data-blk-mode="${idx}" data-m="play_seq" class="${em === 'play_seq' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Play 1,2,3...</button>
-                      <button type="button" data-blk-mode="${idx}" data-m="label" class="${em === 'label' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Mark A/B/C</button>
-                      <button type="button" data-blk-clear-moves="${idx}" class="px-2 py-1 rounded border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 text-[11px]">Clear 1,2,3</button>
-                      <button type="button" data-blk-clear-all="${idx}" class="px-2 py-1 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Clear Board</button>
-                    </div>
-
-                    <!-- Import existing board from Sandbox, Eye Shapes, Problem Bank, or Joseki -->
-                    <div class="flex items-center gap-1.5 pt-1 border-t border-stone-200/80">
-                      <select data-blk-import-sel="${idx}" class="flex-1 text-[11px] px-2 py-1 rounded border border-stone-200 bg-white text-stone-800">
-                        ${importOptionsHtml}
-                      </select>
-                      <button type="button" data-blk-import-btn="${idx}" class="px-2.5 py-1 rounded bg-stone-800 text-white hover:bg-stone-900 text-[11px] font-medium shrink-0">
-                        Import Position
-                      </button>
-                    </div>
-                  </div>
-                </div>
+              <div class="flex flex-wrap items-center gap-1">
+                <button type="button" data-blk-mode="${idx}" data-m="setup_black" class="${em === 'setup_black' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Setup Black</button>
+                <button type="button" data-blk-mode="${idx}" data-m="setup_white" class="${em === 'setup_white' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Setup White</button>
+                <button type="button" data-blk-mode="${idx}" data-m="play_seq" class="${em === 'play_seq' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Play 1,2,3...</button>
+                <button type="button" data-blk-mode="${idx}" data-m="label" class="${em === 'label' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Mark A/B/C</button>
+                <button type="button" data-blk-clear-moves="${idx}" class="px-2 py-1 rounded border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 text-[11px]">Clear 1,2,3</button>
+                <button type="button" data-blk-clear-all="${idx}" class="px-2 py-1 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Clear Board</button>
               </div>
-
-              <div class="flex items-center gap-2 pt-1">
-                <button type="button" data-insert-after="${idx}" data-insert-type="text" class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-stone-800 text-white hover:bg-stone-900 transition">
-                  + Insert Text Section Below
-                </button>
-                <button type="button" data-insert-after="${idx}" data-insert-type="board" class="px-2.5 py-1 rounded-md text-[11px] font-medium border border-amber-300 bg-white text-amber-900 hover:bg-amber-100 transition">
-                  + Insert Another Board Below
+              <div class="flex items-center gap-1.5 pt-1 border-t border-stone-200/80">
+                <select data-blk-import-sel="${idx}" class="flex-1 text-[11px] px-2 py-1 rounded border border-stone-200 bg-white text-stone-800">
+                  ${importOptionsHtml}
+                </select>
+                <button type="button" data-blk-import-btn="${idx}" class="px-2.5 py-1 rounded bg-stone-800 text-white hover:bg-stone-900 text-[11px] font-medium shrink-0">
+                  Import Position
                 </button>
               </div>
             </div>
           `;
+
+          return `
+            <div class="bg-amber-50/40 rounded-2xl p-4 sm:p-5 border border-amber-200/80 flex flex-col items-center gap-3">
+              <div class="w-full flex flex-wrap items-center justify-between gap-2">
+                ${lectureReadMode
+                  ? `<h4 class="text-sm font-semibold text-stone-900">${blk.caption || 'Interactive Example'}</h4>`
+                  : `<input type="text" data-blk-caption="${idx}" value="${(blk.caption || '').replace(/"/g, '&quot;')}" placeholder="Example Caption (e.g. Example 1: Vital Point at D7)" class="flex-1 min-w-[200px] text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-lg border border-amber-300 bg-white text-stone-900 focus:outline-none">`
+                }
+                ${lectureReadMode ? '' : `
+                  <div class="flex items-center gap-1">
+                    ${moveUpBtn}
+                    ${moveDownBtn}
+                    <button type="button" data-blk-del="${idx}" class="px-2 py-0.5 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Delete</button>
+                  </div>
+                `}
+              </div>
+
+              <!-- Full-Size Interactive Board (up to 540px wide so 19x19 is crisp) -->
+              ${renderInteractiveBlockSvg(blk, idx)}
+
+              <!-- Compact Replay & Move Remark Bar right below the Full-Size Board -->
+              <div class="w-full max-w-[540px] bg-white rounded-xl p-3 border border-stone-200 flex flex-col gap-2 text-xs">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="font-semibold text-stone-700">Move ${targetStep} / ${totalMoves}</span>
+                  <div class="flex items-center gap-1.5">
+                    <button type="button" data-blk-step="${idx}" data-step-to="0" class="px-2.5 py-1 rounded bg-stone-50 border border-stone-300 font-semibold hover:bg-stone-100">|&lt;</button>
+                    <button type="button" data-blk-step="${idx}" data-step-to="${targetStep - 1}" class="px-3 py-1 rounded bg-stone-50 border border-stone-300 font-semibold hover:bg-stone-100">&lt; Prev</button>
+                    <button type="button" data-blk-step="${idx}" data-step-to="${targetStep + 1}" class="px-3 py-1 rounded bg-stone-50 border border-stone-300 font-semibold hover:bg-stone-100">Next &gt;</button>
+                    <button type="button" data-blk-step="${idx}" data-step-to="${totalMoves}" class="px-2.5 py-1 rounded bg-stone-50 border border-stone-300 font-semibold hover:bg-stone-100">&gt;|</button>
+                  </div>
+                </div>
+                ${lectureReadMode
+                  ? (curMoveComment ? `<p class="text-xs text-stone-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5"><strong>Move #${targetStep}:</strong> ${curMoveComment}</p>` : '')
+                  : `<input type="text" data-blk-mv-comment="${idx}" value="${curMoveComment.replace(/"/g, '&quot;')}" placeholder="${targetStep > 0 ? `Remark for Move #${targetStep}...` : 'Step to or play a move (1, 2...) to add a remark'}" ${targetStep === 0 ? 'disabled' : ''} class="w-full px-2.5 py-1.5 rounded border border-stone-200 bg-stone-50 text-stone-800 disabled:opacity-50">`
+                }
+              </div>
+
+              ${editorToolboxHtml}
+              <div class="w-full">${insertBarHtml}</div>
+            </div>
+          `;
         }).join('');
 
+        const hashUrlDisplay = `#/note/${lec.id}`;
+
         lectureDetailArea.innerHTML = `
-          <!-- Page Title & Topic Header -->
+          <!-- Page Title, Hash Route Badge, & Read/Edit Toggle -->
           <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-stone-200">
-            <div class="flex-1 min-w-[220px] grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <input id="lecTitleInput" type="text" value="${(lec.title || '').replace(/"/g, '&quot;')}" placeholder="Page Title (e.g. Classic Eye Shapes Tutorial)" class="sm:col-span-2 text-base font-bold px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
-              <input id="lecTopicInput" type="text" value="${(lec.topic || '').replace(/"/g, '&quot;')}" placeholder="Category (e.g. Life & Death)" class="text-xs font-medium px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-700 focus:outline-none focus:bg-white focus:border-stone-400">
+            <div class="flex-1 min-w-[220px]">
+              ${lectureReadMode
+                ? `<div>
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-amber-700">${lec.topic || 'Go Study Note'} · <code>${hashUrlDisplay}</code></span>
+                    <h1 class="text-2xl font-bold text-stone-900 mt-0.5">${lec.title || 'Untitled Note'}</h1>
+                   </div>`
+                : `<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input id="lecTitleInput" type="text" value="${(lec.title || '').replace(/"/g, '&quot;')}" placeholder="Page Title (e.g. Classic Eye Shapes Tutorial)" class="sm:col-span-2 text-base font-bold px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
+                    <input id="lecTopicInput" type="text" value="${(lec.topic || '').replace(/"/g, '&quot;')}" placeholder="Category (e.g. Life & Death)" class="text-xs font-medium px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-700 focus:outline-none focus:bg-white focus:border-stone-400">
+                   </div>`
+              }
             </div>
-            <button type="button" id="btnDeleteLecture" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 border border-red-200 transition">
-              Delete Page
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button type="button" id="btnToggleLectureMode" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${lectureReadMode ? 'bg-stone-900 text-white' : 'bg-emerald-600 text-white hover:bg-emerald-700'} transition">
+                ${lectureReadMode ? 'Edit Page' : 'Preview Read Mode'}
+              </button>
+              <button type="button" id="btnCopyNoteLink" title="Copy direct #/note/ link" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+                Copy Link
+              </button>
+              ${lectureReadMode ? '' : `
+                <button type="button" id="btnDeleteLecture" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 border border-red-200 transition">
+                  Delete
+                </button>
+              `}
+            </div>
           </div>
 
-          <!-- Interleaved Blocks Stream (Text 1 -> Board 1 -> Text 2 -> Board 2...) -->
+          <!-- Interleaved Blocks Stream (Headings, Text, Full-Size Boards) -->
           <div class="flex flex-col gap-4">
             ${blocksHtml}
           </div>
         `;
 
-        const lecTitleInput = document.getElementById('lecTitleInput');
-        const lecTopicInput = document.getElementById('lecTopicInput');
-        const btnDeleteLecture = document.getElementById('btnDeleteLecture');
+        const btnToggleLectureMode = document.getElementById('btnToggleLectureMode');
+        const btnCopyNoteLink = document.getElementById('btnCopyNoteLink');
+        if (btnToggleLectureMode) {
+          btnToggleLectureMode.addEventListener('click', () => {
+            lectureReadMode = !lectureReadMode;
+            renderLectures();
+          });
+        }
+        if (btnCopyNoteLink) {
+          btnCopyNoteLink.addEventListener('click', () => {
+            try {
+              const full = window.location.href.split('#')[0] + `#/note/${lec.id}`;
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(full).catch(() => {});
+              }
+              btnCopyNoteLink.textContent = 'Copied!';
+              setTimeout(() => { btnCopyNoteLink.textContent = 'Copy Link'; }, 1500);
+            } catch (_) {}
+          });
+        }
 
-        lecTitleInput.addEventListener('input', () => {
-          lec.title = lecTitleInput.value;
-          saveDatabaseToStorage();
-          const activeBtn = lectureListEl.querySelector(`[data-select-lec="${lec.id}"] span:first-child`);
-          if (activeBtn) activeBtn.textContent = lec.title || 'Untitled Page';
-        });
+        if (!lectureReadMode) {
+          const lecTitleInput = document.getElementById('lecTitleInput');
+          const lecTopicInput = document.getElementById('lecTopicInput');
+          const btnDeleteLecture = document.getElementById('btnDeleteLecture');
 
-        lecTopicInput.addEventListener('input', () => {
-          lec.topic = lecTopicInput.value;
-          saveDatabaseToStorage();
-        });
+          if (lecTitleInput) {
+            lecTitleInput.addEventListener('input', () => {
+              lec.title = lecTitleInput.value;
+              saveDatabaseToStorage();
+              const activeBtn = lectureListEl.querySelector(`[data-select-lec="${lec.id}"] span:first-child`);
+              if (activeBtn) activeBtn.textContent = lec.title || 'Untitled Page';
+            });
+          }
+          if (lecTopicInput) {
+            lecTopicInput.addEventListener('input', () => {
+              lec.topic = lecTopicInput.value;
+              saveDatabaseToStorage();
+            });
+          }
+          if (btnDeleteLecture) {
+            btnDeleteLecture.addEventListener('click', () => {
+              lectures = lectures.filter(l => l.id !== lec.id);
+              selectedLectureId = lectures.length > 0 ? lectures[0].id : null;
+              setNoteHash(selectedLectureId);
+              saveDatabaseToStorage();
+              updateUI();
+              renderLectures();
+            });
+          }
+        }
 
-        btnDeleteLecture.addEventListener('click', () => {
-          lectures = lectures.filter(l => l.id !== lec.id);
-          selectedLectureId = lectures.length > 0 ? lectures[0].id : null;
-          saveDatabaseToStorage();
-          updateUI();
-          renderLectures();
+        // Heading-only block bindings
+        lectureDetailArea.querySelectorAll('[data-blk-heading-only]').forEach(inp => {
+          inp.addEventListener('input', () => {
+            const idx = parseInt(inp.getAttribute('data-blk-heading-only'), 10);
+            if (lec.blocks[idx]) {
+              lec.blocks[idx].text = inp.value;
+              saveDatabaseToStorage();
+            }
+          });
         });
 
         // Text block bindings
@@ -3692,24 +3847,33 @@
           btn.addEventListener('click', () => {
             const idx = parseInt(btn.getAttribute('data-insert-after'), 10);
             const bType = btn.getAttribute('data-insert-type');
-            const newBlk = bType === 'board'
-              ? {
-                  id: 'blk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
-                  type: 'board',
-                  caption: `Example Board`,
-                  boardSize: 9,
-                  setupBoard: createEmptyBoard(9),
-                  labels: {},
-                  moves: [],
-                  step: 0,
-                  editMode: 'setup_black'
-                }
-              : {
-                  id: 'blk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
-                  type: 'text',
-                  heading: `New Concept Section`,
-                  text: ''
-                };
+            let newBlk;
+            if (bType === 'board') {
+              newBlk = {
+                id: 'blk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+                type: 'board',
+                caption: 'Example Board',
+                boardSize: 9,
+                setupBoard: createEmptyBoard(9),
+                labels: {},
+                moves: [],
+                step: 0,
+                editMode: 'setup_black'
+              };
+            } else if (bType === 'heading') {
+              newBlk = {
+                id: 'blk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+                type: 'heading',
+                text: 'New Section Heading'
+              };
+            } else {
+              newBlk = {
+                id: 'blk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+                type: 'text',
+                heading: '',
+                text: ''
+              };
+            }
             lec.blocks.splice(idx + 1, 0, newBlk);
             saveDatabaseToStorage();
             renderLectures();
@@ -3852,6 +4016,7 @@
           svgEl.querySelectorAll('[data-bx]').forEach(cir => {
             cir.addEventListener('click', (ev) => {
               ev.stopPropagation();
+              if (lectureReadMode) return;
               const x = parseInt(cir.getAttribute('data-bx'), 10);
               const y = parseInt(cir.getAttribute('data-by'), 10);
               const em = blk.editMode || 'setup_black';
@@ -3878,7 +4043,6 @@
               } else if (em === 'play_seq') {
                 const { b } = computeInlineBlockState(blk);
                 if (b[y][x] === 0) {
-                  // Truncate moves after current step if branching/recording from middle
                   blk.moves = blk.moves.slice(0, blk.step);
                   const nextCol = blk.moves.length === 0 ? 1 : (blk.moves[blk.moves.length - 1].color === 1 ? 2 : 1);
                   blk.moves.push({ x, y, color: nextCol, comment: '' });
@@ -3939,6 +4103,7 @@
         } else {
           resetState(19);
         }
+        handleHashRoute();
       };
     })();
   </script>
