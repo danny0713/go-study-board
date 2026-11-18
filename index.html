@@ -62,19 +62,24 @@
             <span>3. Problem Bank</span>
             <span id="dbCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-stone-200 text-stone-800">0</span>
           </button>
-          <button type="button" data-tab="joseki" class="module-tab px-3 py-1 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition flex items-center gap-1.5">
-            <span>4. Joseki Library</span>
-            <span id="josekiCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-stone-200 text-stone-800">0</span>
-          </button>
           <button type="button" data-tab="lectures" class="module-tab px-3 py-1 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition flex items-center gap-1.5">
-            <span>5. Study Notebook</span>
+            <span>4. Study Notebook</span>
             <span id="lectureCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-stone-200 text-stone-800">0</span>
           </button>
         </nav>
       </div>
 
-      <!-- Board Status Counters -->
-      <div class="flex items-center gap-3 text-xs sm:text-sm text-stone-600">
+      <!-- Unified Backup / Restore & Board Status Counters -->
+      <div class="flex items-center gap-2.5 flex-wrap text-xs sm:text-sm text-stone-600">
+        <div class="flex items-center gap-1 mr-1">
+          <button type="button" id="btnBackupAll" title="Export all 4 modules into one JSON backup file" class="px-2 py-1 rounded-md text-[11px] font-semibold bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200 transition">
+            Backup All
+          </button>
+          <label for="inputRestoreAll" title="Restore all 4 modules from a JSON backup file" class="cursor-pointer px-2 py-1 rounded-md text-[11px] font-semibold bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200 transition">
+            Restore All
+          </label>
+          <input id="inputRestoreAll" type="file" accept=".json,application/json" class="hidden">
+        </div>
         <span id="turnBadge" class="text-xs font-medium px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
           Next: Black
         </span>
@@ -145,11 +150,15 @@
           <button type="button" id="btnClear" title="Shortcut: X (Undo with Z)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition">
             Clear [X]
           </button>
+          <label for="inputSandboxSgf" title="Load a .sgf game or problem onto the Sandbox Board" class="cursor-pointer px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+            Import .sgf
+          </label>
+          <input id="inputSandboxSgf" type="file" accept=".sgf,text/plain" class="hidden">
+          <button type="button" id="btnExportSandboxSgf" title="Download current board &amp; moves as an .sgf file" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+            Export .sgf
+          </button>
           <button type="button" id="btnOpenSaveModal" title="Save current board position to your Question Database (Shortcut: Q)" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition shadow-sm">
             + Save Question [Q]
-          </button>
-          <button type="button" id="btnOpenSaveJosekiModal" title="Save ordered moves as a Joseki (Shortcut: J)" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-sm">
-            + Save Joseki [J]
           </button>
         </div>
       </div>
@@ -354,68 +363,7 @@
     </section>
 
     <!-- ==========================================
-         MODULE 4: GO JOSEKI (ORDERED MOVE SEQUENCES)
-         ========================================== -->
-    <section id="moduleJoseki" class="hidden flex-col gap-4">
-      <!-- Top Joseki Action Bar -->
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 class="text-sm sm:text-base font-semibold text-stone-900">Go Joseki Library</h2>
-          <p class="text-xs text-stone-500 mt-0.5">
-            Play out a joseki sequence in order on the Blank Board, then click <strong>+ Save Joseki [J]</strong> to store the exact move order and replay it step by step.
-          </p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <button type="button" id="btnGoToBoardFromJoseki" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-900 text-white hover:bg-stone-700 transition">
-            + Record New Joseki on Board
-          </button>
-          <button type="button" id="btnExportJoseki" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
-            Export JSON
-          </button>
-          <label for="inputImportJoseki" class="cursor-pointer px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
-            Import JSON
-          </label>
-          <input id="inputImportJoseki" type="file" accept=".json,application/json" class="hidden">
-        </div>
-      </div>
-
-      <!-- Main Joseki Layout: Folders Sidebar + Joseki Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
-        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Joseki Folders</span>
-            <span id="josekiFolderTotalCount" class="text-xs text-stone-400">0 folders</span>
-          </div>
-
-          <div class="flex items-center gap-1.5">
-            <input id="newJosekiFolderInput" type="text" placeholder="New folder name..." class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-800 focus:outline-none focus:bg-white focus:border-stone-400">
-            <button type="button" id="btnCreateJosekiFolder" class="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-stone-900 text-white hover:bg-stone-700 transition">
-              Add
-            </button>
-          </div>
-
-          <div id="josekiFolderList" class="flex flex-col gap-1"></div>
-        </div>
-
-        <div class="md:col-span-3 flex flex-col gap-3">
-          <div class="bg-white rounded-xl px-4 py-2.5 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <span id="currentJosekiFolderHeading" class="text-xs sm:text-sm font-semibold text-stone-800">All Joseki</span>
-              <span id="currentJosekiFolderSubCount" class="text-xs text-stone-500">(0)</span>
-            </div>
-            <button type="button" id="btnDeleteCurrentJosekiFolder" class="hidden text-xs font-medium text-red-600 hover:text-red-800 transition">
-              Delete This Folder
-            </button>
-          </div>
-
-          <div id="josekiGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==========================================
-         MODULE 5: LECTURE NOTES (CONCEPTS & EXAMPLES)
+         MODULE 4: STUDY NOTEBOOK (CONCEPTS, JOSEKI & EXAMPLES)
          ========================================== -->
     <section id="moduleLectures" class="hidden flex-col gap-4">
       <div class="bg-white rounded-xl p-4 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-3">
@@ -528,60 +476,6 @@
     </div>
   </div>
 
-  <!-- ==========================================
-       MODAL: SAVE CURRENT MOVE SEQUENCE AS JOSEKI
-       ========================================== -->
-  <div id="saveJosekiModal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl border border-stone-200 flex flex-col gap-4">
-      <div class="flex items-center justify-between">
-        <h3 class="text-base font-semibold text-stone-900">Save Move Sequence as Joseki</h3>
-        <button type="button" id="btnCloseSaveJosekiModal" class="text-stone-400 hover:text-stone-700 text-sm font-semibold px-2 py-0.5 rounded">
-          ✕
-        </button>
-      </div>
-
-      <div class="flex flex-col gap-3 text-xs">
-        <div class="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-emerald-900 font-medium">
-          Recorded sequence: <span id="josekiMoveCountPreview">0 moves</span>
-        </div>
-
-        <div>
-          <label for="jTitleInput" class="block font-medium text-stone-700 mb-1">Joseki Name</label>
-          <input id="jTitleInput" type="text" placeholder="e.g., 3-3 Invasion (Basic)" class="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
-        </div>
-
-        <div>
-          <label for="jFolderSelect" class="block font-medium text-stone-700 mb-1">Folder</label>
-          <select id="jFolderSelect" class="w-full px-2.5 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400"></select>
-        </div>
-
-        <div>
-          <label for="jNewFolderModalInput" class="block font-medium text-stone-700 mb-1">Or Create a New Folder (Optional)</label>
-          <div class="flex items-center gap-1.5">
-            <input id="jNewFolderModalInput" type="text" placeholder="Type new folder name..." class="w-full px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
-            <button type="button" id="btnAddJosekiFolderInModal" class="shrink-0 px-2.5 py-1.5 rounded-lg font-medium bg-stone-200 text-stone-800 hover:bg-stone-300 transition">
-              + Folder
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label for="jNotesInput" class="block font-medium text-stone-700 mb-1">Notes / Key Ideas (Optional)</label>
-          <textarea id="jNotesInput" rows="2" placeholder="e.g., Black takes corner territory, White gets outside wall..." class="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400"></textarea>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-end gap-2 pt-1">
-        <button type="button" id="btnCancelSaveJosekiModal" class="px-3.5 py-2 rounded-lg text-xs font-medium border border-stone-200 text-stone-700 hover:bg-stone-50 transition">
-          Cancel
-        </button>
-        <button type="button" id="btnConfirmSaveJoseki" class="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition">
-          Save Joseki
-        </button>
-      </div>
-    </div>
-  </div>
-
   <script>
     (() => {
       // DOM Elements — Board
@@ -625,10 +519,8 @@
       const moduleBoard = document.getElementById('moduleBoard');
       const moduleShapes = document.getElementById('moduleShapes');
       const moduleDatabase = document.getElementById('moduleDatabase');
-      const moduleJoseki = document.getElementById('moduleJoseki');
       const moduleLectures = document.getElementById('moduleLectures');
       const dbCountBadge = document.getElementById('dbCountBadge');
-      const josekiCountBadge = document.getElementById('josekiCountBadge');
       const lectureCountBadge = document.getElementById('lectureCountBadge');
 
       const branchPickerGroup = document.getElementById('branchPickerGroup');
@@ -663,6 +555,10 @@
       const shapesCatalogGrid = document.getElementById('shapesCatalogGrid');
 
       // Module 3: Question Database & Modal
+      const btnBackupAll = document.getElementById('btnBackupAll');
+      const inputRestoreAll = document.getElementById('inputRestoreAll');
+      const inputSandboxSgf = document.getElementById('inputSandboxSgf');
+      const btnExportSandboxSgf = document.getElementById('btnExportSandboxSgf');
       const btnOpenSaveModal = document.getElementById('btnOpenSaveModal');
       const saveQuestionModal = document.getElementById('saveQuestionModal');
       const btnCloseSaveModal = document.getElementById('btnCloseSaveModal');
@@ -675,30 +571,6 @@
       const qNewFolderModalInput = document.getElementById('qNewFolderModalInput');
       const btnAddFolderInModal = document.getElementById('btnAddFolderInModal');
       const qNotesInput = document.getElementById('qNotesInput');
-
-      const btnOpenSaveJosekiModal = document.getElementById('btnOpenSaveJosekiModal');
-      const saveJosekiModal = document.getElementById('saveJosekiModal');
-      const btnCloseSaveJosekiModal = document.getElementById('btnCloseSaveJosekiModal');
-      const btnCancelSaveJosekiModal = document.getElementById('btnCancelSaveJosekiModal');
-      const btnConfirmSaveJoseki = document.getElementById('btnConfirmSaveJoseki');
-      const josekiMoveCountPreview = document.getElementById('josekiMoveCountPreview');
-      const jTitleInput = document.getElementById('jTitleInput');
-      const jFolderSelect = document.getElementById('jFolderSelect');
-      const jNewFolderModalInput = document.getElementById('jNewFolderModalInput');
-      const btnAddJosekiFolderInModal = document.getElementById('btnAddJosekiFolderInModal');
-      const jNotesInput = document.getElementById('jNotesInput');
-
-      const newJosekiFolderInput = document.getElementById('newJosekiFolderInput');
-      const btnCreateJosekiFolder = document.getElementById('btnCreateJosekiFolder');
-      const josekiFolderListEl = document.getElementById('josekiFolderList');
-      const josekiFolderTotalCountEl = document.getElementById('josekiFolderTotalCount');
-      const currentJosekiFolderHeading = document.getElementById('currentJosekiFolderHeading');
-      const currentJosekiFolderSubCount = document.getElementById('currentJosekiFolderSubCount');
-      const btnDeleteCurrentJosekiFolder = document.getElementById('btnDeleteCurrentJosekiFolder');
-      const josekiGrid = document.getElementById('josekiGrid');
-      const btnGoToBoardFromJoseki = document.getElementById('btnGoToBoardFromJoseki');
-      const btnExportJoseki = document.getElementById('btnExportJoseki');
-      const inputImportJoseki = document.getElementById('inputImportJoseki');
 
       const newFolderInput = document.getElementById('newFolderInput');
       const btnCreateFolder = document.getElementById('btnCreateFolder');
@@ -878,6 +750,155 @@
         }
       }
 
+      function sgfCoordToXY(cc) {
+        if (!cc || cc.length < 2) return null;
+        const x = cc.charCodeAt(0) - 97;
+        const y = cc.charCodeAt(1) - 97;
+        if (x < 0 || y < 0 || x >= 19 || y >= 19) return null;
+        return [x, y];
+      }
+
+      function xyToSgfCoord(x, y) {
+        return String.fromCharCode(97 + x) + String.fromCharCode(97 + y);
+      }
+
+      function parseSgf(sgfText) {
+        let size = 19;
+        const szMatch = sgfText.match(/SZ\[(\d+)\]/i);
+        if (szMatch) {
+          const parsedSz = parseInt(szMatch[1], 10);
+          if ([9, 13, 19].includes(parsedSz)) size = parsedSz;
+        }
+        const setupBoard = createEmptyBoard(size);
+        const parsedLabels = {};
+        const moves = [];
+
+        // Extract main branch nodes sequentially (skipping sub-variations in parentheses after root)
+        let depth = 0;
+        let inBracket = false;
+        let escaped = false;
+        let mainText = '';
+        for (let i = 0; i < sgfText.length; i++) {
+          const ch = sgfText[i];
+          if (escaped) {
+            if (depth === 1) mainText += ch;
+            escaped = false;
+            continue;
+          }
+          if (ch === '\\') {
+            if (depth === 1) mainText += ch;
+            escaped = true;
+            continue;
+          }
+          if (inBracket) {
+            if (depth === 1) mainText += ch;
+            if (ch === ']') inBracket = false;
+            continue;
+          }
+          if (ch === '[') {
+            inBracket = true;
+            if (depth === 1) mainText += ch;
+            continue;
+          }
+          if (ch === '(') {
+            depth++;
+            continue;
+          }
+          if (ch === ')') {
+            depth--;
+            if (depth <= 0) break;
+            continue;
+          }
+          if (depth === 1) mainText += ch;
+        }
+
+        const nodes = mainText.split(';').filter(Boolean);
+        const readProps = (nodeStr, propName) => {
+          const vals = [];
+          const re = new RegExp(`(?:^|[^A-Z])${propName}((?:\\[[^\\]]*\\])+)`, 'g');
+          let m;
+          while ((m = re.exec(' ' + nodeStr)) !== null) {
+            const innerRe = /\[([^\]]*)\]/g;
+            let im;
+            while ((im = innerRe.exec(m[1])) !== null) {
+              vals.push(im[1]);
+            }
+          }
+          return vals;
+        };
+
+        nodes.forEach((node, idx) => {
+          if (idx === 0) {
+            readProps(node, 'AB').forEach(cc => {
+              const p = sgfCoordToXY(cc);
+              if (p && p[0] < size && p[1] < size) setupBoard[p[1]][p[0]] = 1;
+            });
+            readProps(node, 'AW').forEach(cc => {
+              const p = sgfCoordToXY(cc);
+              if (p && p[0] < size && p[1] < size) setupBoard[p[1]][p[0]] = 2;
+            });
+            readProps(node, 'LB').forEach(item => {
+              const parts = item.split(':');
+              const p = sgfCoordToXY(parts[0]);
+              if (p && p[0] < size && p[1] < size && parts[1]) {
+                parsedLabels[`${p[0]},${p[1]}`] = parts[1].slice(0, 2);
+              }
+            });
+          } else {
+            const bMoves = readProps(node, 'B');
+            const wMoves = readProps(node, 'W');
+            const comments = readProps(node, 'C');
+            const cmt = comments.length > 0 ? comments.join(' ').trim() : '';
+            if (bMoves.length > 0) {
+              const p = sgfCoordToXY(bMoves[0]);
+              if (p && p[0] < size && p[1] < size) {
+                moves.push({ x: p[0], y: p[1], color: 1, comment: cmt });
+              }
+            } else if (wMoves.length > 0) {
+              const p = sgfCoordToXY(wMoves[0]);
+              if (p && p[0] < size && p[1] < size) {
+                moves.push({ x: p[0], y: p[1], color: 2, comment: cmt });
+              }
+            }
+          }
+        });
+
+        return { boardSize: size, setupBoard, labels: parsedLabels, moves };
+      }
+
+      function generateSgf({ size, setupBoard, moves, labelsMap }) {
+        let sgf = `(;FF[4]GM[1]CA[UTF-8]SZ[${size}]`;
+        const ab = [];
+        const aw = [];
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            const c = setupBoard[y] ? setupBoard[y][x] : 0;
+            if (c === 1) ab.push(`[${xyToSgfCoord(x, y)}]`);
+            else if (c === 2) aw.push(`[${xyToSgfCoord(x, y)}]`);
+          }
+        }
+        if (ab.length > 0) sgf += `AB${ab.join('')}`;
+        if (aw.length > 0) sgf += `AW${aw.join('')}`;
+
+        const lb = [];
+        for (const [k, ch] of Object.entries(labelsMap || {})) {
+          const [lx, ly] = k.split(',').map(Number);
+          if (lx < size && ly < size) lb.push(`[${xyToSgfCoord(lx, ly)}:${ch}]`);
+        }
+        if (lb.length > 0) sgf += `LB${lb.join('')}`;
+
+        (moves || []).forEach(mv => {
+          const colTag = mv.color === 1 ? 'B' : 'W';
+          sgf += `;${colTag}[${xyToSgfCoord(mv.x, mv.y)}]`;
+          if (mv.comment) {
+            const safeCmt = mv.comment.replace(/\]/g, '\\]');
+            sgf += `C[${safeCmt}]`;
+          }
+        });
+        sgf += ')';
+        return sgf;
+      }
+
       function saveDatabaseToStorage() {
         try {
           localStorage.setItem(STORAGE_FOLDERS_KEY, JSON.stringify(folders));
@@ -904,9 +925,6 @@
         moduleDatabase.classList.toggle('hidden', tabName !== 'database');
         moduleDatabase.classList.toggle('flex', tabName === 'database');
 
-        moduleJoseki.classList.toggle('hidden', tabName !== 'joseki');
-        moduleJoseki.classList.toggle('flex', tabName === 'joseki');
-
         moduleLectures.classList.toggle('hidden', tabName !== 'lectures');
         moduleLectures.classList.toggle('flex', tabName === 'lectures');
 
@@ -917,8 +935,6 @@
           renderShapesCatalog();
         } else if (tabName === 'database') {
           renderDatabase();
-        } else if (tabName === 'joseki') {
-          renderJosekiLibrary();
         } else if (tabName === 'lectures') {
           renderLectures();
         }
@@ -1211,7 +1227,6 @@
         whiteCapsEl.textContent = whiteCaptured;
         moveCountEl.textContent = moveCounter;
         dbCountBadge.textContent = String(questions.length);
-        josekiCountBadge.textContent = String(josekiList.length);
         if (lectureCountBadge) lectureCountBadge.textContent = String(lectures.length);
 
         btnUndo.disabled = history.length === 0;
@@ -1864,7 +1879,6 @@
         saveDatabaseToStorage();
         renderDatabase();
         renderShapesCatalog();
-        renderJosekiLibrary();
         showStatus(val ? 'Saved overall description.' : 'Cleared overall description.');
       });
 
@@ -1911,7 +1925,6 @@
         syncBranchAndDescUI();
         renderDatabase();
         renderShapesCatalog();
-        renderJosekiLibrary();
         showStatus(`Saved ${brName} (${branchMoves.length} move${branchMoves.length === 1 ? '' : 's'}).`);
       });
 
@@ -1931,7 +1944,6 @@
         }
         renderDatabase();
         renderShapesCatalog();
-        renderJosekiLibrary();
         showStatus(`Deleted ${removed ? removed.name : 'branch'}.`);
       });
 
@@ -1973,8 +1985,7 @@
         if (activeJosekiReplay && activeJosekiReplay.item && activeJosekiReplay.item.moves[stepIdx]) {
           activeJosekiReplay.item.moves[stepIdx].comment = remark;
           saveDatabaseToStorage();
-          renderJosekiLibrary();
-        } else if (activeSolutionReplay) {
+          } else if (activeSolutionReplay) {
           const sols = getTargetSolutionsArray(activeSolutionReplay.targetType, activeSolutionReplay.id);
           const solObj = sols[activeSolutionReplay.solIndex];
           if (solObj && solObj.moves && solObj.moves[stepIdx]) {
@@ -2737,395 +2748,7 @@
       }
 
       // ==========================================
-      // MODULE 4: GO JOSEKI (ORDERED MOVES & REPLAY WITH REMARKS)
-      // ==========================================
-      function populateJosekiFolderSelectModal() {
-        let html = `<option value="">Uncategorized</option>`;
-        for (const f of josekiFolders) {
-          const esc = f.replace(/"/g, '&quot;');
-          const sel = (selectedJosekiFolderFilter === f) ? 'selected' : '';
-          html += `<option value="${esc}" ${sel}>${f}</option>`;
-        }
-        jFolderSelect.innerHTML = html;
-      }
-
-      function openSaveJosekiModal() {
-        if (moveSequence.length === 0) {
-          showStatus('Play some moves on the board first so their order can be saved as a joseki.');
-          return;
-        }
-        populateJosekiFolderSelectModal();
-        josekiMoveCountPreview.textContent = `${moveSequence.length} ordered move${moveSequence.length === 1 ? '' : 's'}`;
-        jTitleInput.value = `Joseki #${josekiList.length + 1}`;
-        jNewFolderModalInput.value = '';
-        jNotesInput.value = '';
-        saveJosekiModal.classList.remove('hidden');
-        jTitleInput.focus();
-      }
-
-      function closeSaveJosekiModal() {
-        saveJosekiModal.classList.add('hidden');
-      }
-
-      btnOpenSaveJosekiModal.addEventListener('click', openSaveJosekiModal);
-      btnCloseSaveJosekiModal.addEventListener('click', closeSaveJosekiModal);
-      btnCancelSaveJosekiModal.addEventListener('click', closeSaveJosekiModal);
-
-      btnAddJosekiFolderInModal.addEventListener('click', () => {
-        const name = jNewFolderModalInput.value.trim();
-        if (!name) return;
-        if (!josekiFolders.includes(name)) {
-          josekiFolders.push(name);
-          saveDatabaseToStorage();
-        }
-        selectedJosekiFolderFilter = name;
-        populateJosekiFolderSelectModal();
-        jFolderSelect.value = name;
-        jNewFolderModalInput.value = '';
-      });
-
-      btnConfirmSaveJoseki.addEventListener('click', () => {
-        const title = jTitleInput.value.trim() || `Joseki #${josekiList.length + 1}`;
-        const pendingNew = jNewFolderModalInput.value.trim();
-        let folder = jFolderSelect.value;
-        if (pendingNew) {
-          if (!josekiFolders.includes(pendingNew)) josekiFolders.push(pendingNew);
-          folder = pendingNew;
-        }
-        const notes = jNotesInput.value.trim();
-
-        const newJoseki = {
-          id: 'j_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-          title,
-          folder,
-          notes,
-          boardSize,
-          moves: moveSequence.map(m => ({ ...m, comment: m.comment || '' })),
-          createdAt: new Date().toLocaleDateString()
-        };
-
-        josekiList.unshift(newJoseki);
-        saveDatabaseToStorage();
-        closeSaveJosekiModal();
-        updateUI();
-        showStatus(`Saved joseki "${title}" (${newJoseki.moves.length} moves).`);
-      });
-
-      function createNewJosekiFolderFromSidebar() {
-        const name = newJosekiFolderInput.value.trim();
-        if (!name) return;
-        if (!josekiFolders.includes(name)) {
-          josekiFolders.push(name);
-          saveDatabaseToStorage();
-        }
-        newJosekiFolderInput.value = '';
-        selectedJosekiFolderFilter = name;
-        renderJosekiLibrary();
-      }
-
-      btnCreateJosekiFolder.addEventListener('click', createNewJosekiFolderFromSidebar);
-      newJosekiFolderInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') createNewJosekiFolderFromSidebar();
-      });
-
-      btnDeleteCurrentJosekiFolder.addEventListener('click', () => {
-        if (selectedJosekiFolderFilter === '__ALL__' || selectedJosekiFolderFilter === '__UNCATEGORIZED__') return;
-        const target = selectedJosekiFolderFilter;
-        josekiFolders = josekiFolders.filter(f => f !== target);
-        josekiList.forEach(j => {
-          if (j.folder === target) j.folder = '';
-        });
-        selectedJosekiFolderFilter = '__ALL__';
-        saveDatabaseToStorage();
-        renderJosekiLibrary();
-      });
-
-      btnGoToBoardFromJoseki.addEventListener('click', () => switchTab('board'));
-
-      btnExportJoseki.addEventListener('click', () => {
-        const payload = JSON.stringify({ folders: josekiFolders, joseki: josekiList }, null, 2);
-        const blob = new Blob([payload], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'go_joseki_database.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      });
-
-      inputImportJoseki.addEventListener('change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          try {
-            const parsed = JSON.parse(reader.result);
-            if (Array.isArray(parsed.folders)) {
-              parsed.folders.forEach(f => {
-                if (typeof f === 'string' && f && !josekiFolders.includes(f)) josekiFolders.push(f);
-              });
-            }
-            if (Array.isArray(parsed.joseki)) {
-              josekiList = [...parsed.joseki, ...josekiList];
-            }
-            saveDatabaseToStorage();
-            updateUI();
-            renderJosekiLibrary();
-          } catch (_) {}
-        };
-        reader.readAsText(file);
-        inputImportJoseki.value = '';
-      });
-
-      function applyJosekiStep(item, targetStep, branchIdx = activeBranchIndex) {
-        const sz = item.boardSize || 19;
-        resetState(sz, false);
-        const moves = getEffectiveMoves(item, branchIdx);
-        const clamped = Math.max(0, Math.min(targetStep, moves.length));
-        setMode('alternate');
-        showNumbers = true;
-
-        for (let i = 0; i < clamped; i++) {
-          const mv = moves[i];
-          if (board[mv.y] && board[mv.y][mv.x] === 0) {
-            board[mv.y][mv.x] = mv.color;
-            const opp = mv.color === 1 ? 2 : 1;
-            let caps = 0;
-            if (autoCapture) {
-              for (const [nx, ny] of getNeighbors(mv.x, mv.y)) {
-                if (board[ny][nx] === opp) {
-                  const grp = getGroupAndLiberties(nx, ny, board);
-                  if (grp.liberties === 0) {
-                    for (const [sx, sy] of grp.stones) {
-                      board[sy][sx] = 0;
-                      moveNums[sy][sx] = 0;
-                      caps++;
-                    }
-                  }
-                }
-              }
-            }
-            if (opp === 1) blackCaptured += caps;
-            else whiteCaptured += caps;
-            moveCounter += 1;
-            moveNums[mv.y][mv.x] = moveCounter;
-            moveSequence.push({ ...mv, comment: mv.comment || '' });
-            lastMove = { x: mv.x, y: mv.y };
-            nextColor = mv.color === 1 ? 2 : 1;
-          }
-        }
-
-        activeTargetType = 'joseki';
-        activeBranchIndex = branchIdx;
-        activeJosekiReplay = { item, branchIndex: branchIdx, step: clamped };
-        activeSolutionReplay = null;
-        josekiStepLabel.textContent = `${clamped} / ${moves.length}`;
-        josekiReplayControls.classList.remove('hidden');
-        josekiReplayControls.classList.add('flex');
-        solutionPickerGroup.classList.add('hidden');
-        solutionPickerGroup.classList.remove('flex');
-        btnSaveQuestionSolution.classList.add('hidden');
-          btnSaveWrongSolution.classList.add('hidden');
-        syncBranchAndDescUI();
-        syncMoveCommentUI();
-
-        if (clamped > 0 && moves[clamped - 1] && moves[clamped - 1].comment) {
-          showStatus(`Move #${clamped}: ${moves[clamped - 1].comment}`);
-        }
-        updateUI();
-        draw();
-      }
-
-      function loadJosekiToBoard(jId) {
-        const item = josekiList.find(j => j.id === jId);
-        if (!item) return;
-        activeBranchIndex = -1;
-        applyJosekiStep(item, item.moves.length, -1);
-        studyBaseline = {
-          title: item.title,
-          subtitle: item.notes || `${item.moves.length} moves`,
-          snapshot: cloneState()
-        };
-        activeStudyTitle.textContent = `Joseki: ${item.title}`;
-        activeDifficultyBadge.classList.add('hidden');
-        activeStudySub.textContent = item.notes ? `— ${item.notes}` : `(${item.moves.length} moves)`;
-        activeStudyBar.classList.remove('hidden');
-        switchTab('board');
-        showStatus(`Loaded joseki "${item.title}" (${item.moves.length} moves). Use < and > to step through and edit move remarks.`);
-      }
-
-      btnJosekiFirst.addEventListener('click', () => {
-        if (activeJosekiReplay) applyJosekiStep(activeJosekiReplay.item, 0);
-        else if (activeSolutionReplay) applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, 0);
-      });
-      btnJosekiPrev.addEventListener('click', () => {
-        if (activeJosekiReplay) applyJosekiStep(activeJosekiReplay.item, activeJosekiReplay.step - 1);
-        else if (activeSolutionReplay) applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, activeSolutionReplay.step - 1);
-      });
-      btnJosekiNext.addEventListener('click', () => {
-        if (activeJosekiReplay) applyJosekiStep(activeJosekiReplay.item, activeJosekiReplay.step + 1);
-        else if (activeSolutionReplay) applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, activeSolutionReplay.step + 1);
-      });
-      btnJosekiLast.addEventListener('click', () => {
-        if (activeJosekiReplay) {
-          const eff = getEffectiveMoves(activeJosekiReplay.item, activeBranchIndex);
-          applyJosekiStep(activeJosekiReplay.item, eff.length, activeBranchIndex);
-        } else if (activeSolutionReplay) {
-          const sols = getTargetSolutionsArray(activeSolutionReplay.targetType, activeSolutionReplay.id);
-          const eff = getEffectiveMoves(sols[activeSolutionReplay.solIndex], activeBranchIndex);
-          applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, eff.length, activeBranchIndex);
-        }
-      });
-
-      function buildJosekiPreviewBoard(item) {
-        const sz = item.boardSize || 19;
-        const b = createEmptyBoard(sz);
-        const nums = createEmptyBoard(sz);
-        item.moves.forEach((mv, idx) => {
-          if (b[mv.y] && mv.y < sz && mv.x < sz) {
-            b[mv.y][mv.x] = mv.color;
-            nums[mv.y][mv.x] = idx + 1;
-          }
-        });
-        return { b, nums };
-      }
-
-      function renderJosekiLibrary() {
-        josekiFolderTotalCountEl.textContent = `${josekiFolders.length} folder${josekiFolders.length === 1 ? '' : 's'}`;
-        const uncatCount = josekiList.filter(j => !j.folder).length;
-
-        let folderHtml = `
-          <button type="button" data-jfolder-filter="__ALL__" class="jfolder-filter-btn ${selectedJosekiFolderFilter === '__ALL__' ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex items-center justify-between transition">
-            <span>All Joseki</span>
-            <span class="opacity-75">${josekiList.length}</span>
-          </button>
-          <button type="button" data-jfolder-filter="__UNCATEGORIZED__" class="jfolder-filter-btn ${selectedJosekiFolderFilter === '__UNCATEGORIZED__' ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex items-center justify-between transition">
-            <span>Uncategorized</span>
-            <span class="opacity-75">${uncatCount}</span>
-          </button>
-        `;
-
-        for (const f of josekiFolders) {
-          const count = josekiList.filter(j => j.folder === f).length;
-          const active = selectedJosekiFolderFilter === f;
-          const esc = f.replace(/"/g, '&quot;');
-          folderHtml += `
-            <button type="button" data-jfolder-filter="${esc}" class="jfolder-filter-btn ${active ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex items-center justify-between transition">
-              <span class="truncate pr-2">📁 ${f}</span>
-              <span class="opacity-75">${count}</span>
-            </button>
-          `;
-        }
-        josekiFolderListEl.innerHTML = folderHtml;
-
-        josekiFolderListEl.querySelectorAll('.jfolder-filter-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            selectedJosekiFolderFilter = btn.getAttribute('data-jfolder-filter');
-            renderJosekiLibrary();
-          });
-        });
-
-        let filtered = josekiList;
-        if (selectedJosekiFolderFilter === '__UNCATEGORIZED__') {
-          filtered = josekiList.filter(j => !j.folder);
-          currentJosekiFolderHeading.textContent = 'Uncategorized Joseki';
-          btnDeleteCurrentJosekiFolder.classList.add('hidden');
-        } else if (selectedJosekiFolderFilter !== '__ALL__') {
-          filtered = josekiList.filter(j => j.folder === selectedJosekiFolderFilter);
-          currentJosekiFolderHeading.textContent = `Folder: ${selectedJosekiFolderFilter}`;
-          btnDeleteCurrentJosekiFolder.classList.remove('hidden');
-        } else {
-          currentJosekiFolderHeading.textContent = 'All Joseki';
-          btnDeleteCurrentJosekiFolder.classList.add('hidden');
-        }
-        currentJosekiFolderSubCount.textContent = `(${filtered.length})`;
-
-        if (filtered.length === 0) {
-          josekiGrid.innerHTML = `
-            <div class="sm:col-span-2 lg:col-span-3 bg-white rounded-xl p-8 text-center border border-dashed border-stone-300 flex flex-col items-center justify-center gap-2">
-              <p class="text-sm font-semibold text-stone-700">No saved joseki in this folder yet</p>
-              <p class="text-xs text-stone-500 max-w-md">
-                Play out a sequence on <strong>1. Blank Board</strong> and click <strong>+ Save Joseki [J]</strong> to store the exact move order for step-by-step replay.
-              </p>
-            </div>
-          `;
-          return;
-        }
-
-        josekiGrid.innerHTML = filtered.map(j => {
-          const { b, nums } = buildJosekiPreviewBoard(j);
-          const thumb = renderMiniBoardSvg(b, j.boardSize || 19, { __moveNums: nums }, null);
-          const commentCount = Array.isArray(j.moves) ? j.moves.filter(m => m.comment).length : 0;
-          let folderOpts = `<option value="" ${!j.folder ? 'selected' : ''}>Uncategorized</option>`;
-          for (const f of josekiFolders) {
-            const esc = f.replace(/"/g, '&quot;');
-            folderOpts += `<option value="${esc}" ${j.folder === f ? 'selected' : ''}>${f}</option>`;
-          }
-
-          return `
-            <div class="bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col justify-between gap-3 hover:border-stone-400 transition">
-              <div class="flex flex-col gap-2">
-                <div class="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 class="text-sm font-semibold text-stone-900">${j.title}</h3>
-                    <span class="text-[11px] text-stone-500">${j.boardSize || 19}×${j.boardSize || 19} · ${j.moves.length} moves${commentCount > 0 ? ` · ${commentCount} remark${commentCount === 1 ? '' : 's'}` : ''}</span>
-                  </div>
-                  <button type="button" data-del-j="${j.id}" title="Delete joseki" class="text-xs text-stone-400 hover:text-red-600 px-1.5 py-0.5 rounded">
-                    Delete
-                  </button>
-                </div>
-
-                <div class="flex justify-center py-1">${thumb}</div>
-
-                ${j.notes ? `<p class="text-xs text-stone-600 bg-stone-50 rounded-lg px-2.5 py-1.5 border border-stone-100">${j.notes}</p>` : ''}
-              </div>
-
-              <div class="flex flex-col gap-2 pt-1 border-t border-stone-100">
-                <div class="flex items-center justify-between gap-2 text-xs">
-                  <span class="text-stone-500">Folder:</span>
-                  <select data-move-j="${j.id}" aria-label="Move joseki to folder" class="text-xs bg-stone-50 border border-stone-200 rounded-md px-2 py-1 text-stone-800">
-                    ${folderOpts}
-                  </select>
-                </div>
-                <button type="button" data-load-j="${j.id}" class="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition">
-                  Replay Joseki on Board &rarr;
-                </button>
-              </div>
-            </div>
-          `;
-        }).join('');
-
-        josekiGrid.querySelectorAll('[data-load-j]').forEach(btn => {
-          btn.addEventListener('click', () => loadJosekiToBoard(btn.getAttribute('data-load-j')));
-        });
-
-        josekiGrid.querySelectorAll('[data-del-j]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const id = btn.getAttribute('data-del-j');
-            josekiList = josekiList.filter(item => item.id !== id);
-            saveDatabaseToStorage();
-            updateUI();
-            renderJosekiLibrary();
-          });
-        });
-
-        josekiGrid.querySelectorAll('[data-move-j]').forEach(sel => {
-          sel.addEventListener('change', () => {
-            const id = sel.getAttribute('data-move-j');
-            const targetJ = josekiList.find(item => item.id === id);
-            if (targetJ) {
-              targetJ.folder = sel.value;
-              saveDatabaseToStorage();
-              renderJosekiLibrary();
-            }
-          });
-        });
-      }
-
-      // ==========================================
-      // MODULE 5: STUDY NOTEBOOK (HASH-ROUTED W3SCHOOLS TUTORIAL PAGES)
+      // MODULE 4: STUDY NOTEBOOK (HASH-ROUTED W3SCHOOLS TUTORIAL PAGES)
       // ==========================================
       let lectureReadMode = false; // false = Edit Mode, true = Clean Read Mode
 
@@ -3511,13 +3134,7 @@
           }
           html += `</optgroup>`;
         }
-        if (josekiList.length > 0) {
-          html += `<optgroup label="From 4. Joseki Library">`;
-          for (const j of josekiList) {
-            html += `<option value="joseki:${j.id}">${j.title}</option>`;
-          }
-          html += `</optgroup>`;
-        }
+
         return html;
       }
 
@@ -3935,16 +3552,25 @@
                 <button type="button" data-blk-mode="${idx}" data-m="setup_black" class="${em === 'setup_black' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Setup Black</button>
                 <button type="button" data-blk-mode="${idx}" data-m="setup_white" class="${em === 'setup_white' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Setup White</button>
                 <button type="button" data-blk-mode="${idx}" data-m="play_seq" class="${em === 'play_seq' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Play 1,2,3...</button>
+                <button type="button" data-blk-firstcol="${idx}" title="Toggle starting color for Move 1 (Black or White)" class="px-2 py-1 rounded border border-stone-200 bg-white text-stone-700 hover:bg-stone-100 text-[11px] font-medium">1st: ${(blk.firstMoveColor || 1) === 1 ? 'Black' : 'White'}</button>
                 <button type="button" data-blk-mode="${idx}" data-m="label" class="${em === 'label' ? 'btn-active' : 'bg-white text-stone-700'} px-2 py-1 rounded border border-stone-200 text-[11px] font-medium">Mark A/B/C</button>
+                <button type="button" data-blk-undo-move="${idx}" class="px-2 py-1 rounded border border-stone-200 bg-white text-stone-700 hover:bg-stone-100 text-[11px]">Undo Move</button>
                 <button type="button" data-blk-clear-moves="${idx}" class="px-2 py-1 rounded border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 text-[11px]">Clear 1,2,3</button>
                 <button type="button" data-blk-clear-all="${idx}" class="px-2 py-1 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Clear Board</button>
               </div>
-              <div class="flex items-center gap-1.5 pt-1 border-t border-stone-200/80">
-                <select data-blk-import-sel="${idx}" class="flex-1 text-[11px] px-2 py-1 rounded border border-stone-200 bg-white text-stone-800">
+              <div class="flex items-center gap-1.5 pt-1 border-t border-stone-200/80 flex-wrap">
+                <select data-blk-import-sel="${idx}" class="flex-1 min-w-[140px] text-[11px] px-2 py-1 rounded border border-stone-200 bg-white text-stone-800">
                   ${importOptionsHtml}
                 </select>
                 <button type="button" data-blk-import-btn="${idx}" class="px-2.5 py-1 rounded bg-stone-800 text-white hover:bg-stone-900 text-[11px] font-medium shrink-0">
                   Import Position
+                </button>
+                <label class="cursor-pointer px-2 py-1 rounded border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 text-[11px] font-medium shrink-0">
+                  Import .sgf
+                  <input type="file" accept=".sgf,text/plain" data-blk-sgf-in="${idx}" class="hidden">
+                </label>
+                <button type="button" data-blk-sgf-out="${idx}" class="px-2 py-1 rounded border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 text-[11px] font-medium shrink-0">
+                  Export .sgf
                 </button>
               </div>
             </div>
@@ -3978,6 +3604,7 @@
                     <button type="button" data-blk-step="${idx}" data-step-to="${targetStep - 1}" class="px-3 py-1 rounded bg-stone-50 border border-stone-300 font-semibold hover:bg-stone-100">&lt; Prev</button>
                     <button type="button" data-blk-step="${idx}" data-step-to="${targetStep + 1}" class="px-3 py-1 rounded bg-stone-50 border border-stone-300 font-semibold hover:bg-stone-100">Next &gt;</button>
                     <button type="button" data-blk-step="${idx}" data-step-to="${totalMoves}" class="px-2.5 py-1 rounded bg-stone-50 border border-stone-300 font-semibold hover:bg-stone-100">&gt;|</button>
+                    <button type="button" data-blk-open-sandbox="${idx}" title="Open this board in 1. Sandbox Board" class="ml-1 px-2.5 py-1 rounded bg-amber-100 border border-amber-300 text-amber-900 font-semibold hover:bg-amber-200 transition">Open in Sandbox ↗</button>
                   </div>
                 </div>
                 ${lectureReadMode
@@ -4273,6 +3900,58 @@
           });
         });
 
+        // Toggle 1st Move Color (Black/White) for inline board Play 1,2,3...
+        lectureDetailArea.querySelectorAll('[data-blk-firstcol]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-firstcol'), 10);
+            const blk = lec.blocks[idx];
+            if (blk) {
+              blk.firstMoveColor = (blk.firstMoveColor || 1) === 1 ? 2 : 1;
+              saveDatabaseToStorage();
+              renderLectures();
+            }
+          });
+        });
+
+        // Undo last numbered move on inline board
+        lectureDetailArea.querySelectorAll('[data-blk-undo-move]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-undo-move'), 10);
+            const blk = lec.blocks[idx];
+            if (blk && Array.isArray(blk.moves) && blk.moves.length > 0) {
+              blk.moves.pop();
+              blk.step = Math.min(blk.step, blk.moves.length);
+              saveDatabaseToStorage();
+              renderLectures();
+            }
+          });
+        });
+
+        // Open inline board in 1. Sandbox Board
+        lectureDetailArea.querySelectorAll('[data-blk-open-sandbox]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-open-sandbox'), 10);
+            const blk = lec.blocks[idx];
+            if (!blk) return;
+            resetState(blk.boardSize || 9, true);
+            board = blk.setupBoard ? blk.setupBoard.map(r => [...r]) : createEmptyBoard(boardSize);
+            labels = { ...(blk.labels || {}) };
+            setMode('alternate');
+            nextColor = blk.firstMoveColor || 1;
+            showNumbers = true;
+            if (Array.isArray(blk.moves)) {
+              for (let i = 0; i < Math.min(blk.step || 0, blk.moves.length); i++) {
+                const mv = blk.moves[i];
+                if (board[mv.y] && board[mv.y][mv.x] === 0) {
+                  placeStone(mv.x, mv.y, mv.color);
+                }
+              }
+            }
+            switchTab('board');
+            showStatus(`Opened "${blk.caption || 'Study Board'}" in Sandbox Board.`);
+          });
+        });
+
         // Clear numbered moves or clear whole inline board
         lectureDetailArea.querySelectorAll('[data-blk-clear-moves]').forEach(btn => {
           btn.addEventListener('click', () => {
@@ -4299,6 +3978,54 @@
               saveDatabaseToStorage();
               renderLectures();
             }
+          });
+        });
+
+        // Inline Board SGF Import & Export
+        lectureDetailArea.querySelectorAll('[data-blk-sgf-in]').forEach(inp => {
+          inp.addEventListener('change', (e) => {
+            const idx = parseInt(inp.getAttribute('data-blk-sgf-in'), 10);
+            const file = e.target.files && e.target.files[0];
+            const blk = lec.blocks[idx];
+            if (!file || !blk) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+              try {
+                const parsed = parseSgf(reader.result);
+                blk.boardSize = parsed.boardSize;
+                blk.setupBoard = parsed.setupBoard;
+                blk.labels = parsed.labels;
+                blk.moves = parsed.moves;
+                blk.step = parsed.moves.length;
+                saveDatabaseToStorage();
+                renderLectures();
+              } catch (_) {}
+            };
+            reader.readAsText(file);
+            inp.value = '';
+          });
+        });
+
+        lectureDetailArea.querySelectorAll('[data-blk-sgf-out]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-sgf-out'), 10);
+            const blk = lec.blocks[idx];
+            if (!blk) return;
+            const sgf = generateSgf({
+              size: blk.boardSize || 9,
+              setupBoard: blk.setupBoard || createEmptyBoard(blk.boardSize || 9),
+              moves: blk.moves || [],
+              labelsMap: blk.labels || {}
+            });
+            const blob = new Blob([sgf], { type: 'application/x-go-sgf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${(blk.caption || 'study_board').replace(/[^a-zA-Z0-9_-]/g, '_')}.sgf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
           });
         });
 
@@ -4352,7 +4079,7 @@
                 const { b } = computeInlineBlockState(blk);
                 if (b[y][x] === 0) {
                   blk.moves = blk.moves.slice(0, blk.step);
-                  const nextCol = blk.moves.length === 0 ? 1 : (blk.moves[blk.moves.length - 1].color === 1 ? 2 : 1);
+                  const nextCol = blk.moves.length === 0 ? (blk.firstMoveColor || 1) : (blk.moves[blk.moves.length - 1].color === 1 ? 2 : 1);
                   blk.moves.push({ x, y, color: nextCol, comment: '' });
                   blk.step = blk.moves.length;
                 }
@@ -4371,10 +4098,6 @@
           if (e.key === 'Escape') closeSaveQuestionModal();
           return;
         }
-        if (!saveJosekiModal.classList.contains('hidden')) {
-          if (e.key === 'Escape') closeSaveJosekiModal();
-          return;
-        }
         const k = e.key.toLowerCase();
         if (k === 'a') { setMode('alternate'); }
         else if (k === 'b') { setMode('black'); }
@@ -4389,7 +4112,6 @@
         else if (k === 's') { btnSound.click(); }
         else if (k === 'x') { btnClear.click(); }
         else if (k === 'q') { openSaveQuestionModal(); }
-        else if (k === 'j') { openSaveJosekiModal(); }
         else if (k === 'r' && studyBaseline) { btnResetBaseline.click(); }
       });
 
@@ -4400,11 +4122,122 @@
         }
       });
 
+      // Unified Backup All & Restore All (All 4 Modules)
+      if (btnBackupAll) {
+        btnBackupAll.addEventListener('click', () => {
+          const payload = JSON.stringify({
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            folders,
+            questions,
+            shapeSolutionsMap,
+            lectureFolders,
+            lectures
+          }, null, 2);
+          const blob = new Blob([payload], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `go_study_full_backup_${new Date().toISOString().slice(0, 10)}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showStatus('Exported full backup of all 4 modules.');
+        });
+      }
+
+      if (inputRestoreAll) {
+        inputRestoreAll.addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const parsed = JSON.parse(reader.result);
+              if (Array.isArray(parsed.folders)) folders = parsed.folders;
+              if (Array.isArray(parsed.questions)) questions = parsed.questions.map(normalizeQuestionSolutions);
+              if (parsed.shapeSolutionsMap && typeof parsed.shapeSolutionsMap === 'object') shapeSolutionsMap = parsed.shapeSolutionsMap;
+              if (Array.isArray(parsed.lectureFolders)) lectureFolders = parsed.lectureFolders;
+              if (Array.isArray(parsed.lectures)) lectures = parsed.lectures.map(normalizeLectureBlocks);
+              saveDatabaseToStorage();
+              updateUI();
+              renderShapesCatalog();
+              renderDatabase();
+              renderLectures();
+              showStatus('Restored full backup across all 4 modules!');
+            } catch (_) {
+              showStatus('Invalid backup JSON file.');
+            }
+          };
+          reader.readAsText(file);
+          inputRestoreAll.value = '';
+        });
+      }
+
+      // Sandbox SGF Export & Import
+      if (btnExportSandboxSgf) {
+        btnExportSandboxSgf.addEventListener('click', () => {
+          const baseSetup = (studyBaseline && studyBaseline.snapshot)
+            ? studyBaseline.snapshot.board
+            : createEmptyBoard(boardSize);
+          const sgf = generateSgf({
+            size: boardSize,
+            setupBoard: moveSequence.length > 0 ? baseSetup : board,
+            moves: moveSequence,
+            labelsMap: labels
+          });
+          const blob = new Blob([sgf], { type: 'application/x-go-sgf' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `go_board_${boardSize}x${boardSize}.sgf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showStatus('Exported .sgf file.');
+        });
+      }
+
+      if (inputSandboxSgf) {
+        inputSandboxSgf.addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const parsed = parseSgf(reader.result);
+              resetState(parsed.boardSize, true);
+              board = parsed.setupBoard.map(r => [...r]);
+              labels = { ...parsed.labels };
+              setMode('alternate');
+              showNumbers = parsed.moves.length > 0;
+              parsed.moves.forEach(mv => {
+                if (board[mv.y] && board[mv.y][mv.x] === 0) {
+                  placeStone(mv.x, mv.y, mv.color);
+                  if (mv.comment && moveSequence.length > 0) {
+                    moveSequence[moveSequence.length - 1].comment = mv.comment;
+                  }
+                }
+              });
+              syncMoveCommentUI();
+              updateUI();
+              draw();
+              showStatus(`Loaded SGF (${parsed.boardSize}×${parsed.boardSize}, ${parsed.moves.length} moves).`);
+            } catch (_) {
+              showStatus('Could not parse SGF file.');
+            }
+          };
+          reader.readAsText(file);
+          inputSandboxSgf.value = '';
+        });
+      }
+
       window.onload = () => {
         loadDatabaseFromStorage();
         renderShapesCatalog();
         renderDatabase();
-        renderJosekiLibrary();
         renderLectures();
         if (questions.length > 0) {
           loadQuestionToBoard(questions[0].id);
