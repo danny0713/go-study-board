@@ -147,6 +147,9 @@
           <button type="button" id="btnSound" title="Shortcut: S" class="btn-active px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition">
             Sound [S]
           </button>
+          <button type="button" id="btnScoreMode" title="Enter Score / Territory Counter mode (click dead stones to mark them)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition">
+            Score
+          </button>
           <button type="button" id="btnClear" title="Shortcut: X (Undo with Z)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition">
             Clear [X]
           </button>
@@ -172,43 +175,12 @@
             <span class="text-amber-700" id="activeStudySub"></span>
           </div>
           <div class="flex items-center gap-1.5 flex-wrap">
-            <!-- Multi-solution selector for Questions & Go Shapes -->
-            <div id="solutionPickerGroup" class="hidden items-center gap-1">
-              <select id="solutionSelect" aria-label="Select saved solution" class="px-2 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 focus:outline-none"></select>
-              <button type="button" id="btnShowQuestionSolution" class="px-2.5 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">
-                Replay Sol
-              </button>
-              <button type="button" id="btnDeleteSelectedSolution" title="Delete selected solution" class="px-2 py-1 rounded-lg font-medium bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 transition">
-                Delete Sol
-              </button>
-            </div>
 
-            <!-- Step-by-step replay controls -->
-            <div id="josekiReplayControls" class="hidden items-center gap-1 mr-1">
-              <button type="button" id="btnJosekiFirst" title="Go to start" class="px-2 py-1 rounded-lg font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">|&lt;</button>
-              <button type="button" id="btnJosekiPrev" title="Previous move" class="px-2.5 py-1 rounded-lg font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">&lt;</button>
-              <span id="josekiStepLabel" class="px-2 text-xs font-semibold text-amber-900 tabular-nums">0 / 0</span>
-              <button type="button" id="btnJosekiNext" title="Next move" class="px-2.5 py-1 rounded-lg font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">&gt;</button>
-              <button type="button" id="btnJosekiLast" title="Show all moves" class="px-2 py-1 rounded-lg font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">&gt;|</button>
-            </div>
-
-            <!-- Branch / Track Controls for Solutions & Joseki -->
-            <div id="branchPickerGroup" class="hidden items-center gap-1">
-              <span class="text-[11px] font-semibold text-amber-800">Track:</span>
-              <select id="branchSelect" aria-label="Select branch or track" class="px-2 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 focus:outline-none"></select>
-              <button type="button" id="btnSaveBranch" title="Save current variation as a new branch on this Solution or Joseki" class="px-2.5 py-1 rounded-lg font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition">
-                + Save Branch
-              </button>
-              <button type="button" id="btnDeleteBranch" title="Delete selected branch" class="hidden px-2 py-1 rounded-lg font-medium bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 transition">
-                Del Branch
-              </button>
-            </div>
-
-            <button type="button" id="btnSaveQuestionSolution" class="hidden px-2.5 py-1 rounded-lg font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition">
-              + Save Correct Sol
+            <button type="button" id="btnOpenLinkedSolNote" title="Open or write a full-page Solution Note (with text + similar question boards) for this question" class="hidden px-2.5 py-1 rounded-lg font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition">
+              Solution Note &rarr;
             </button>
-            <button type="button" id="btnSaveWrongSolution" class="hidden px-2.5 py-1 rounded-lg font-semibold bg-rose-600 text-white hover:bg-rose-700 transition">
-              + Save Wrong Sol
+            <button type="button" id="btnEditActiveQuestion" title="Edit this question's title and description" class="hidden px-2.5 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">
+              Edit Info
             </button>
             <button type="button" id="btnToggleStudyFirstColor" title="Switch who plays Move 1 (Black first vs. White first)" class="hidden px-2.5 py-1 rounded-lg font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">
               1st: Black
@@ -222,17 +194,6 @@
           </div>
         </div>
 
-        <!-- Overall Description Bar (for Whole Solution, Joseki, or Branch) -->
-        <div id="solDescriptionBar" class="hidden pt-2 border-t border-amber-200/80 flex flex-col gap-1.5">
-          <div class="flex items-center justify-between gap-2">
-            <label for="solDescriptionInput" id="solDescriptionLabel" class="font-semibold text-amber-900">Whole Solution / Joseki Description:</label>
-            <button type="button" id="btnSaveSolDescription" class="px-2.5 py-1 rounded-lg font-medium bg-stone-800 text-white hover:bg-stone-900 transition shrink-0">
-              Save Whole Description
-            </button>
-          </div>
-          <textarea id="solDescriptionInput" rows="2" placeholder="Write an overall explanation or key takeaway for this whole solution, joseki, or branch (not just a single move)..." class="w-full px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white text-stone-800 focus:outline-none focus:border-amber-500 leading-relaxed"></textarea>
-        </div>
-
         <!-- Per-Move Remark / Comment Bar (for Solutions & Joseki) -->
         <div id="moveCommentBar" class="hidden pt-2 border-t border-amber-200/80 flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2 flex-1 min-w-[220px]">
@@ -243,6 +204,23 @@
             Save Move Remark
           </button>
         </div>
+      </div>
+
+      <!-- Territory & Score Summary Bar (shown in Score Mode) -->
+      <div id="scoreSummaryBar" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-3 flex-wrap text-emerald-950">
+          <span class="font-bold">Score Mode (Click dead stones):</span>
+          <select id="scoreRuleSelect" title="Scoring ruleset" class="px-2 py-1 rounded-lg border border-emerald-300 bg-white text-emerald-950 font-semibold text-xs focus:outline-none">
+            <option value="territory">Korean / Japanese (+6.5, Territory)</option>
+            <option value="chinese">Chinese (+7.5, Area + Stones)</option>
+          </select>
+          <span>Black: <strong id="scoreBlackTotal">0</strong> <span class="text-emerald-700" id="scoreBlackDetail">(0 terr + 0 cap)</span></span>
+          <span><span id="scoreWhiteLabel">White (+6.5 komi):</span> <strong id="scoreWhiteTotal">6.5</strong> <span class="text-emerald-700" id="scoreWhiteDetail">(0 terr + 0 cap)</span></span>
+          <span class="px-2 py-0.5 rounded-full bg-white border border-emerald-300 font-bold" id="scoreResultBadge">Even</span>
+        </div>
+        <button type="button" id="btnExitScoreMode" class="px-2.5 py-1 rounded-lg font-semibold bg-emerald-700 text-white hover:bg-emerald-800 transition">
+          Exit Score Mode
+        </button>
       </div>
 
       <!-- Goban Container -->
@@ -342,9 +320,10 @@
         <!-- Questions Grid Area -->
         <div class="md:col-span-3 flex flex-col gap-3">
           <div class="bg-white rounded-xl px-4 py-2.5 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <span id="currentFolderHeading" class="text-xs sm:text-sm font-semibold text-stone-800">All Questions</span>
               <span id="currentFolderSubCount" class="text-xs text-stone-500">(0)</span>
+              <input id="problemSearchInput" type="search" placeholder="Search problems..." class="text-xs px-2.5 py-1 rounded-lg border border-stone-200 bg-stone-50 text-stone-800 focus:outline-none focus:bg-white focus:border-stone-400 w-40 sm:w-48">
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <span class="text-xs text-stone-500">Difficulty:</span>
@@ -397,6 +376,7 @@
             <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Folders &amp; Notes</span>
             <span id="lectureListCount" class="text-xs text-stone-400">0</span>
           </div>
+          <input id="lectureSearchInput" type="search" placeholder="Search notes &amp; remarks..." class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-800 focus:outline-none focus:bg-white focus:border-stone-400">
           <div class="flex items-center gap-1">
             <input id="newLectureFolderInput" type="text" placeholder="New folder..." class="w-full text-xs px-2 py-1 rounded-lg border border-stone-200 bg-stone-50 text-stone-800 focus:outline-none focus:bg-white focus:border-stone-400">
             <button type="button" id="btnCreateLectureFolder" class="shrink-0 px-2 py-1 rounded-lg text-xs font-medium bg-stone-900 text-white hover:bg-stone-700 transition">
@@ -479,6 +459,32 @@
     </div>
   </div>
 
+  <!-- ==========================================
+       MODAL: EDIT EXISTING QUESTION TITLE & DESCRIPTION
+       ========================================== -->
+  <div id="editQuestionModal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl border border-stone-200 flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-semibold text-stone-900">Edit Question Details</h3>
+        <button type="button" id="btnCloseEditQModal" class="text-stone-400 hover:text-stone-700 text-sm font-semibold px-2 py-0.5 rounded">✕</button>
+      </div>
+      <div class="flex flex-col gap-3 text-xs">
+        <div>
+          <label for="editQTitleInput" class="block font-medium text-stone-700 mb-1">Question Title</label>
+          <input id="editQTitleInput" type="text" class="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
+        </div>
+        <div>
+          <label for="editQNotesInput" class="block font-medium text-stone-700 mb-1">Whole Question Description / Goal</label>
+          <textarea id="editQNotesInput" rows="3" placeholder="Describe the situation, goal, or hint for the whole question..." class="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400"></textarea>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button type="button" id="btnCancelEditQModal" class="px-3.5 py-2 rounded-lg text-xs font-medium border border-stone-200 text-stone-700 hover:bg-stone-50 transition">Cancel</button>
+        <button type="button" id="btnConfirmEditQModal" class="px-4 py-2 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     (() => {
       // DOM Elements — Board
@@ -498,6 +504,16 @@
       const btnCoords = document.getElementById('btnCoords');
       const btnCapture = document.getElementById('btnCapture');
       const btnSound = document.getElementById('btnSound');
+      const btnScoreMode = document.getElementById('btnScoreMode');
+      const scoreSummaryBar = document.getElementById('scoreSummaryBar');
+      const scoreRuleSelect = document.getElementById('scoreRuleSelect');
+      const scoreWhiteLabelEl = document.getElementById('scoreWhiteLabel');
+      const scoreBlackTotalEl = document.getElementById('scoreBlackTotal');
+      const scoreBlackDetailEl = document.getElementById('scoreBlackDetail');
+      const scoreWhiteTotalEl = document.getElementById('scoreWhiteTotal');
+      const scoreWhiteDetailEl = document.getElementById('scoreWhiteDetail');
+      const scoreResultBadge = document.getElementById('scoreResultBadge');
+      const btnExitScoreMode = document.getElementById('btnExitScoreMode');
       const btnClear = document.getElementById('btnClear');
 
       // Active Study Baseline Banner
@@ -505,13 +521,16 @@
       const activeStudyTitle = document.getElementById('activeStudyTitle');
       const activeDifficultyBadge = document.getElementById('activeDifficultyBadge');
       const activeStudySub = document.getElementById('activeStudySub');
-      const solutionPickerGroup = document.getElementById('solutionPickerGroup');
-      const solutionSelect = document.getElementById('solutionSelect');
-      const btnSaveQuestionSolution = document.getElementById('btnSaveQuestionSolution');
-      const btnSaveWrongSolution = document.getElementById('btnSaveWrongSolution');
-      const btnShowQuestionSolution = document.getElementById('btnShowQuestionSolution');
-      const btnDeleteSelectedSolution = document.getElementById('btnDeleteSelectedSolution');
+      const btnOpenLinkedSolNote = document.getElementById('btnOpenLinkedSolNote');
+      const btnEditActiveQuestion = document.getElementById('btnEditActiveQuestion');
       const btnToggleStudyFirstColor = document.getElementById('btnToggleStudyFirstColor');
+      const editQuestionModal = document.getElementById('editQuestionModal');
+      const btnCloseEditQModal = document.getElementById('btnCloseEditQModal');
+      const btnCancelEditQModal = document.getElementById('btnCancelEditQModal');
+      const btnConfirmEditQModal = document.getElementById('btnConfirmEditQModal');
+      const editQTitleInput = document.getElementById('editQTitleInput');
+      const editQNotesInput = document.getElementById('editQNotesInput');
+      let editingQuestionId = null;
       const btnResetBaseline = document.getElementById('btnResetBaseline');
       const btnExitStudy = document.getElementById('btnExitStudy');
       const moveCommentBar = document.getElementById('moveCommentBar');
@@ -527,14 +546,6 @@
       const dbCountBadge = document.getElementById('dbCountBadge');
       const lectureCountBadge = document.getElementById('lectureCountBadge');
 
-      const branchPickerGroup = document.getElementById('branchPickerGroup');
-      const branchSelect = document.getElementById('branchSelect');
-      const btnSaveBranch = document.getElementById('btnSaveBranch');
-      const btnDeleteBranch = document.getElementById('btnDeleteBranch');
-      const solDescriptionBar = document.getElementById('solDescriptionBar');
-      const solDescriptionLabel = document.getElementById('solDescriptionLabel');
-      const solDescriptionInput = document.getElementById('solDescriptionInput');
-      const btnSaveSolDescription = document.getElementById('btnSaveSolDescription');
 
       const btnNewLecture = document.getElementById('btnNewLecture');
       const newLectureFolderInput = document.getElementById('newLectureFolderInput');
@@ -545,12 +556,6 @@
       const lectureListEl = document.getElementById('lectureListEl');
       const lectureDetailArea = document.getElementById('lectureDetailArea');
 
-      const josekiReplayControls = document.getElementById('josekiReplayControls');
-      const btnJosekiFirst = document.getElementById('btnJosekiFirst');
-      const btnJosekiPrev = document.getElementById('btnJosekiPrev');
-      const josekiStepLabel = document.getElementById('josekiStepLabel');
-      const btnJosekiNext = document.getElementById('btnJosekiNext');
-      const btnJosekiLast = document.getElementById('btnJosekiLast');
 
       // Module 2: Go Shapes
       const shapeSelect = document.getElementById('shapeSelect');
@@ -583,6 +588,8 @@
       const currentFolderHeading = document.getElementById('currentFolderHeading');
       const currentFolderSubCount = document.getElementById('currentFolderSubCount');
       const btnDeleteCurrentFolder = document.getElementById('btnDeleteCurrentFolder');
+      const problemSearchInput = document.getElementById('problemSearchInput');
+      const lectureSearchInput = document.getElementById('lectureSearchInput');
       const questionsGrid = document.getElementById('questionsGrid');
       const btnGoToBoardFromDb = document.getElementById('btnGoToBoardFromDb');
       const btnExportDb = document.getElementById('btnExportDb');
@@ -616,6 +623,8 @@
       let history = [];
       let redoStack = [];
       let hoverPos = null;
+      let scoreMode = false;
+      let deadStones = new Set(); // "x,y" keys of user-marked dead stones
       let audioCtx = null;
       let studyBaseline = null;
 
@@ -644,6 +653,9 @@
       let selectedLectureId = null;
       let draggedLectureId = null;
       let draggedFolderId = null;
+      let problemSearchQuery = '';
+      let lectureSearchQuery = '';
+      let activeInlineBoardIdx = null;
 
       const INITIAL_SEED_QUESTIONS = [
         {
@@ -1004,19 +1016,19 @@
         history = [];
         redoStack = [];
         hoverPos = null;
+        scoreMode = false;
+        deadStones = new Set();
+        if (scoreSummaryBar) scoreSummaryBar.classList.add('hidden');
+        if (btnScoreMode) btnScoreMode.classList.remove('btn-active');
         if (clearBaseline) {
           studyBaseline = null;
           activeTargetType = null;
           activeJosekiReplay = null;
           activeQuestionId = null;
           activeSolutionReplay = null;
-          josekiReplayControls.classList.add('hidden');
-          josekiReplayControls.classList.remove('flex');
-          solutionPickerGroup.classList.add('hidden');
-          solutionPickerGroup.classList.remove('flex');
-          btnSaveQuestionSolution.classList.add('hidden');
-          btnSaveWrongSolution.classList.add('hidden');
           if (btnToggleStudyFirstColor) btnToggleStudyFirstColor.classList.add('hidden');
+          if (btnOpenLinkedSolNote) btnOpenLinkedSolNote.classList.add('hidden');
+          if (btnEditActiveQuestion) btnEditActiveQuestion.classList.add('hidden');
           moveCommentBar.classList.add('hidden');
           activeStudyBar.classList.add('hidden');
         }
@@ -1159,7 +1171,119 @@
         return 'A';
       }
 
+      function computeTerritoryAndScore() {
+        const rule = scoreRuleSelect ? scoreRuleSelect.value : 'territory';
+        const territoryMap = createEmptyBoard(boardSize); // 0 = neutral/stone, 1 = Black terr, 2 = White terr
+        const visited = createEmptyBoard(boardSize);
+        let blackTerr = 0;
+        let whiteTerr = 0;
+        let deadBlackCount = 0;
+        let deadWhiteCount = 0;
+        let aliveBlackStones = 0;
+        let aliveWhiteStones = 0;
+
+        for (let y = 0; y < boardSize; y++) {
+          for (let x = 0; x < boardSize; x++) {
+            const c = board[y][x];
+            if (c !== 0) {
+              if (deadStones.has(`${x},${y}`)) {
+                if (c === 1) deadBlackCount++;
+                else deadWhiteCount++;
+              } else {
+                if (c === 1) aliveBlackStones++;
+                else aliveWhiteStones++;
+              }
+            }
+          }
+        }
+
+        const isAliveStone = (x, y) => board[y][x] !== 0 && !deadStones.has(`${x},${y}`);
+
+        for (let y = 0; y < boardSize; y++) {
+          for (let x = 0; x < boardSize; x++) {
+            if (visited[y][x] || isAliveStone(x, y)) continue;
+            const region = [];
+            const touches = new Set();
+            const stack = [[x, y]];
+            visited[y][x] = 1;
+
+            while (stack.length > 0) {
+              const [cx, cy] = stack.pop();
+              region.push([cx, cy]);
+              for (const [nx, ny] of getNeighbors(cx, cy)) {
+                if (isAliveStone(nx, ny)) {
+                  touches.add(board[ny][nx]);
+                } else if (!visited[ny][nx]) {
+                  visited[ny][nx] = 1;
+                  stack.push([nx, ny]);
+                }
+              }
+            }
+
+            if (touches.size === 1) {
+              const owner = touches.has(1) ? 1 : 2;
+              for (const [rx, ry] of region) {
+                territoryMap[ry][rx] = owner;
+                if (owner === 1) blackTerr++;
+                else whiteTerr++;
+              }
+            }
+          }
+        }
+
+        const komi = rule === 'chinese' ? 7.5 : 6.5;
+        const bCapsTotal = whiteCaptured + deadWhiteCount;
+        const wCapsTotal = blackCaptured + deadBlackCount;
+        const bTotal = rule === 'chinese' ? (blackTerr + aliveBlackStones) : (blackTerr + bCapsTotal);
+        const wTotal = rule === 'chinese' ? (whiteTerr + aliveWhiteStones + komi) : (whiteTerr + wCapsTotal + komi);
+
+        return {
+          rule,
+          komi,
+          territoryMap,
+          blackTerr,
+          whiteTerr,
+          aliveBlackStones,
+          aliveWhiteStones,
+          bCapsTotal,
+          wCapsTotal,
+          bTotal,
+          wTotal
+        };
+      }
+
+      function updateScoreSummaryUI() {
+        if (!scoreMode) return;
+        const res = computeTerritoryAndScore();
+        if (scoreWhiteLabelEl) scoreWhiteLabelEl.textContent = `White (+${res.komi} komi):`;
+        scoreBlackTotalEl.textContent = String(res.bTotal);
+        scoreWhiteTotalEl.textContent = String(res.wTotal);
+        if (res.rule === 'chinese') {
+          scoreBlackDetailEl.textContent = `(${res.blackTerr} terr + ${res.aliveBlackStones} stones)`;
+          scoreWhiteDetailEl.textContent = `(${res.whiteTerr} terr + ${res.aliveWhiteStones} stones)`;
+        } else {
+          scoreBlackDetailEl.textContent = `(${res.blackTerr} terr + ${res.bCapsTotal} cap)`;
+          scoreWhiteDetailEl.textContent = `(${res.whiteTerr} terr + ${res.wCapsTotal} cap)`;
+        }
+        const diff = res.bTotal - res.wTotal;
+        scoreResultBadge.textContent = diff > 0 ? `B+${diff}` : `W+${Math.abs(diff)}`;
+      }
+
       function handleBoardClick(x, y) {
+        if (scoreMode) {
+          if (board[y][x] !== 0) {
+            const grp = getGroupAndLiberties(x, y, board);
+            const anyDead = grp.stones.some(([sx, sy]) => deadStones.has(`${sx},${sy}`));
+            for (const [sx, sy] of grp.stones) {
+              const k = `${sx},${sy}`;
+              if (anyDead) deadStones.delete(k);
+              else deadStones.add(k);
+            }
+            updateScoreSummaryUI();
+            draw();
+          }
+          return;
+        }
         if (x < 0 || x >= boardSize || y < 0 || y >= boardSize) return;
 
         if (mode === 'label') {
@@ -1337,13 +1461,19 @@
           }
         }
 
+        const scoreData = scoreMode ? computeTerritoryAndScore() : null;
+
         for (let y = 0; y < boardSize; y++) {
           for (let x = 0; x < boardSize; x++) {
             const c = board[y][x];
             if (c !== 0) {
               const cx = margin + x * cell;
               const cy = margin + y * cell;
+              const isDead = scoreMode && deadStones.has(`${x},${y}`);
+              ctx.save();
+              if (isDead) ctx.globalAlpha = 0.35;
               drawStone(cx, cy, stoneR, c);
+              ctx.restore();
 
               if (showNumbers && moveNums[y][x] > 0) {
                 ctx.fillStyle = c === 1 ? '#f5f5f4' : '#1c1917';
@@ -1358,6 +1488,24 @@
                 ctx.beginPath();
                 ctx.arc(cx, cy, stoneR * 0.42, 0, Math.PI * 2);
                 ctx.stroke();
+              }
+            }
+          }
+        }
+
+        if (scoreData) {
+          const sq = Math.max(5, cell * 0.28);
+          for (let y = 0; y < boardSize; y++) {
+            for (let x = 0; x < boardSize; x++) {
+              const owner = scoreData.territoryMap[y][x];
+              if (owner !== 0) {
+                const cx = margin + x * cell;
+                const cy = margin + y * cell;
+                ctx.fillStyle = owner === 1 ? '#111827' : '#ffffff';
+                ctx.strokeStyle = owner === 1 ? '#ffffff' : '#111827';
+                ctx.lineWidth = 1;
+                ctx.fillRect(cx - sq / 2, cy - sq / 2, sq, sq);
+                ctx.strokeRect(cx - sq / 2, cy - sq / 2, sq, sq);
               }
             }
           }
@@ -1508,6 +1656,24 @@
         updateUI();
       });
 
+      function toggleScoreMode(forceState) {
+        scoreMode = typeof forceState === 'boolean' ? forceState : !scoreMode;
+        if (btnScoreMode) btnScoreMode.classList.toggle('btn-active', scoreMode);
+        if (scoreSummaryBar) scoreSummaryBar.classList.toggle('hidden', !scoreMode);
+        if (scoreMode) {
+          hoverPos = null;
+          updateScoreSummaryUI();
+          showStatus('Score Mode: Click any dead stone/group to mark it dead and tally territory.');
+        } else {
+          showStatus('Exited Score Mode.');
+        }
+        draw();
+      }
+
+      if (btnScoreMode) btnScoreMode.addEventListener('click', () => toggleScoreMode());
+      if (btnExitScoreMode) btnExitScoreMode.addEventListener('click', () => toggleScoreMode(false));
+      if (scoreRuleSelect) scoreRuleSelect.addEventListener('change', () => { updateScoreSummaryUI(); draw(); });
+
       btnClear.addEventListener('click', () => {
         if (moveCounter === 0 && Object.keys(labels).length === 0 && board.every(r => r.every(c => c === 0))) return;
         pushHistory();
@@ -1525,13 +1691,9 @@
         activeJosekiReplay = null;
         activeQuestionId = null;
         activeSolutionReplay = null;
-        josekiReplayControls.classList.add('hidden');
-        josekiReplayControls.classList.remove('flex');
-        solutionPickerGroup.classList.add('hidden');
-        solutionPickerGroup.classList.remove('flex');
-        btnSaveQuestionSolution.classList.add('hidden');
-          btnSaveWrongSolution.classList.add('hidden');
           if (btnToggleStudyFirstColor) btnToggleStudyFirstColor.classList.add('hidden');
+          if (btnOpenLinkedSolNote) btnOpenLinkedSolNote.classList.add('hidden');
+          if (btnEditActiveQuestion) btnEditActiveQuestion.classList.add('hidden');
         moveCommentBar.classList.add('hidden');
         activeStudyBar.classList.add('hidden');
         updateUI();
@@ -1545,8 +1707,6 @@
         restoreState(studyBaseline.snapshot);
         activeSolutionReplay = null;
         if (activeTargetType !== 'joseki') {
-          josekiReplayControls.classList.add('hidden');
-          josekiReplayControls.classList.remove('flex');
         }
         setMode('alternate');
         syncMoveCommentUI();
@@ -1563,8 +1723,6 @@
           restoreState(studyBaseline.snapshot);
           nextColor = toggledFirst;
           activeSolutionReplay = null;
-          josekiReplayControls.classList.add('hidden');
-          josekiReplayControls.classList.remove('flex');
           setMode('alternate');
           btnToggleStudyFirstColor.textContent = toggledFirst === 1 ? '1st: Black' : '1st: White';
           syncMoveCommentUI();
@@ -1808,42 +1966,6 @@
         return q.solutions;
       }
 
-      function syncSolutionPickerUI() {
-        if (activeTargetType !== 'question' && activeTargetType !== 'shape') {
-          solutionPickerGroup.classList.add('hidden');
-          solutionPickerGroup.classList.remove('flex');
-          return;
-        }
-        const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
-        if (sols.length === 0) {
-          solutionPickerGroup.classList.add('hidden');
-          solutionPickerGroup.classList.remove('flex');
-          return;
-        }
-        if (activeSolutionIndex >= sols.length) activeSolutionIndex = sols.length - 1;
-        if (activeSolutionIndex < 0) activeSolutionIndex = 0;
-
-        solutionSelect.innerHTML = sols.map((s, idx) => {
-          const name = s.name || (s.type === 'wrong' ? `wrong${idx + 1}` : `sol${idx + 1}`);
-          const tag = s.type === 'wrong' ? '✗ Wrong' : '✓ Correct';
-          return `<option value="${idx}" ${idx === activeSolutionIndex ? 'selected' : ''}>${name} (${tag})</option>`;
-        }).join('');
-
-        solutionPickerGroup.classList.remove('hidden');
-        solutionPickerGroup.classList.add('flex');
-      }
-
-      function getActiveSequenceContainer() {
-        if (activeTargetType === 'joseki' && activeJosekiReplay && activeJosekiReplay.item) {
-          return activeJosekiReplay.item;
-        }
-        if ((activeTargetType === 'question' || activeTargetType === 'shape') && activeQuestionId) {
-          const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
-          return sols[activeSolutionIndex] || null;
-        }
-        return null;
-      }
-
       function getEffectiveMoves(container, branchIdx = -1) {
         if (!container) return [];
         const mainMoves = Array.isArray(container.moves) ? container.moves : [];
@@ -1854,138 +1976,6 @@
         const prefix = mainMoves.slice(0, br.fromStep || 0);
         return [...prefix, ...(Array.isArray(br.moves) ? br.moves : [])];
       }
-
-      function syncBranchAndDescUI() {
-        const container = getActiveSequenceContainer();
-        if (!container) {
-          branchPickerGroup.classList.add('hidden');
-          branchPickerGroup.classList.remove('flex');
-          // Even if no solution is saved yet, if a Shape or Question is loaded on the board, show the Whole Description bar so the user can type the description before/while saving a new solution
-          if (activeTargetType === 'question' || activeTargetType === 'shape') {
-            solDescriptionLabel.textContent = 'Whole Solution Description (Draft for next saved sol/wrong):';
-            solDescriptionBar.classList.remove('hidden');
-          } else {
-            solDescriptionBar.classList.add('hidden');
-          }
-          return;
-        }
-        if (!Array.isArray(container.branches)) container.branches = [];
-        if (activeBranchIndex >= container.branches.length) activeBranchIndex = -1;
-
-        let opts = `<option value="-1" ${activeBranchIndex === -1 ? 'selected' : ''}>Main Line</option>`;
-        container.branches.forEach((br, idx) => {
-          const label = br.name || `Branch ${idx + 1} (from #${br.fromStep || 0})`;
-          opts += `<option value="${idx}" ${activeBranchIndex === idx ? 'selected' : ''}>${label}</option>`;
-        });
-        branchSelect.innerHTML = opts;
-        branchPickerGroup.classList.remove('hidden');
-        branchPickerGroup.classList.add('flex');
-        btnDeleteBranch.classList.toggle('hidden', activeBranchIndex < 0);
-
-        const targetObj = (activeBranchIndex >= 0 && container.branches[activeBranchIndex])
-          ? container.branches[activeBranchIndex]
-          : container;
-        const descPrefix = activeBranchIndex >= 0
-          ? (targetObj.name || `Branch ${activeBranchIndex + 1}`)
-          : (activeTargetType === 'joseki' ? `Whole Joseki (${container.title || 'Joseki'})` : `Whole Solution (${container.name || 'sol'})`);
-        solDescriptionLabel.textContent = `${descPrefix} Description:`;
-        solDescriptionInput.value = targetObj.description || targetObj.notes || '';
-        solDescriptionBar.classList.remove('hidden');
-      }
-
-      btnSaveSolDescription.addEventListener('click', () => {
-        const container = getActiveSequenceContainer();
-        if (!container) return;
-        const val = solDescriptionInput.value.trim();
-        if (activeBranchIndex >= 0 && container.branches && container.branches[activeBranchIndex]) {
-          container.branches[activeBranchIndex].description = val;
-        } else {
-          container.description = val;
-          if (activeTargetType === 'joseki') container.notes = val;
-        }
-        saveDatabaseToStorage();
-        renderDatabase();
-        renderShapesCatalog();
-        showStatus(val ? 'Saved overall description.' : 'Cleared overall description.');
-      });
-
-      solDescriptionInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          btnSaveSolDescription.click();
-        }
-      });
-
-      btnSaveBranch.addEventListener('click', () => {
-        const container = getActiveSequenceContainer();
-        if (!container) return;
-        if (moveSequence.length === 0) {
-          showStatus('Play some variation moves on the board first to save a branch.');
-          return;
-        }
-        const mainMoves = Array.isArray(container.moves) ? container.moves : [];
-        let divergeIdx = 0;
-        while (
-          divergeIdx < mainMoves.length &&
-          divergeIdx < moveSequence.length &&
-          mainMoves[divergeIdx].x === moveSequence[divergeIdx].x &&
-          mainMoves[divergeIdx].y === moveSequence[divergeIdx].y &&
-          mainMoves[divergeIdx].color === moveSequence[divergeIdx].color
-        ) {
-          divergeIdx++;
-        }
-        const branchMoves = moveSequence.slice(divergeIdx).map(m => ({ ...m, comment: m.comment || '' }));
-        if (branchMoves.length === 0) {
-          showStatus('Current moves match the Main Line — play a different move to create a branch.');
-          return;
-        }
-        if (!Array.isArray(container.branches)) container.branches = [];
-        const brName = `Branch ${container.branches.length + 1} (from #${divergeIdx})`;
-        container.branches.push({
-          name: brName,
-          fromStep: divergeIdx,
-          moves: branchMoves,
-          description: ''
-        });
-        activeBranchIndex = container.branches.length - 1;
-        saveDatabaseToStorage();
-        syncBranchAndDescUI();
-        renderDatabase();
-        renderShapesCatalog();
-        showStatus(`Saved ${brName} (${branchMoves.length} move${branchMoves.length === 1 ? '' : 's'}).`);
-      });
-
-      btnDeleteBranch.addEventListener('click', () => {
-        const container = getActiveSequenceContainer();
-        if (!container || activeBranchIndex < 0 || !Array.isArray(container.branches)) return;
-        const removed = container.branches[activeBranchIndex];
-        container.branches.splice(activeBranchIndex, 1);
-        activeBranchIndex = -1;
-        saveDatabaseToStorage();
-        if (activeTargetType === 'joseki' && activeJosekiReplay) {
-          applyJosekiStep(activeJosekiReplay.item, activeJosekiReplay.item.moves.length, -1);
-        } else if (activeSolutionReplay) {
-          const sols = getTargetSolutionsArray(activeSolutionReplay.targetType, activeSolutionReplay.id);
-          const len = sols[activeSolutionReplay.solIndex] ? sols[activeSolutionReplay.solIndex].moves.length : 0;
-          applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, len, -1);
-        }
-        renderDatabase();
-        renderShapesCatalog();
-        showStatus(`Deleted ${removed ? removed.name : 'branch'}.`);
-      });
-
-      branchSelect.addEventListener('change', () => {
-        const idx = parseInt(branchSelect.value, 10);
-        activeBranchIndex = isNaN(idx) ? -1 : idx;
-        if (activeTargetType === 'joseki' && activeJosekiReplay) {
-          const eff = getEffectiveMoves(activeJosekiReplay.item, activeBranchIndex);
-          applyJosekiStep(activeJosekiReplay.item, eff.length, activeBranchIndex);
-        } else if (activeSolutionReplay) {
-          const sols = getTargetSolutionsArray(activeSolutionReplay.targetType, activeSolutionReplay.id);
-          const eff = getEffectiveMoves(sols[activeSolutionReplay.solIndex], activeBranchIndex);
-          applyTargetSolutionStep(activeSolutionReplay.targetType, activeSolutionReplay.id, activeSolutionReplay.solIndex, eff.length, activeBranchIndex);
-        }
-      });
 
       function syncMoveCommentUI() {
         // Show move comment bar whenever at least 1 ordered move is on the board (or during solution/joseki replay)
@@ -2039,33 +2029,6 @@
           for (const [dx, dy] of defenderWall) if (dx < 9 && dy < 9) tempB[dy][dx] = 2; // White defends
           for (const [ax, ay] of attackerRing) if (ax < 9 && ay < 9) tempB[ay][ax] = 1; // Black attacks
           const svgThumb = renderMiniBoardSvg(tempB, 9, {}, item.vital);
-          const sols = getTargetSolutionsArray('shape', key);
-
-          const solButtonsHtml = sols.length > 0
-            ? `<div class="flex flex-wrap items-center gap-1 pt-1">
-                ${sols.map((s, idx) => {
-                  const isW = s.type === 'wrong';
-                  const wrapCls = isW
-                    ? 'bg-rose-50 border-rose-200 text-rose-800'
-                    : 'bg-emerald-50 border-emerald-200 text-emerald-800';
-                  const btnHover = isW ? 'hover:bg-rose-100' : 'hover:bg-emerald-100';
-                  const delCls = isW
-                    ? 'text-rose-600 hover:text-red-700 hover:bg-red-100 border-rose-200'
-                    : 'text-emerald-600 hover:text-red-600 hover:bg-red-50 border-emerald-200';
-                  const dTip = s.description ? ` — ${s.description}` : '';
-                  return `
-                  <div class="inline-flex items-center rounded-md border text-[11px] font-medium ${wrapCls}" title="${(s.description || '').replace(/"/g, '&quot;')}">
-                    <button type="button" data-shape-sol="${key}" data-sol-idx="${idx}" class="px-2 py-0.5 ${btnHover} rounded-l-md transition max-w-[210px] truncate">
-                      ${s.name || (isW ? 'wrong' : 'sol')}${dTip}
-                    </button>
-                    <button type="button" data-del-shape-sol="${key}" data-sol-idx="${idx}" title="Delete this variation" class="px-1.5 py-0.5 ${delCls} rounded-r-md border-l transition">
-                      ✕
-                    </button>
-                  </div>`;
-                }).join('')}
-              </div>`
-            : `<div class="text-[11px] text-stone-400">No saved solutions yet — load shape to record Correct or Wrong variations</div>`;
-
           return `
             <div class="bg-white rounded-xl p-4 shadow-sm border border-stone-200 flex flex-col justify-between gap-3 hover:border-stone-400 transition">
               <div class="flex flex-col gap-2">
@@ -2080,7 +2043,6 @@
                     <p class="leading-relaxed text-stone-500">${item.hint}</p>
                   </div>
                 </div>
-                ${solButtonsHtml}
               </div>
               <button type="button" data-load-shape="${key}" class="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
                 Practice Shape on Board &rarr;
@@ -2116,7 +2078,6 @@
               relabelSolutionsList(sols);
               saveDatabaseToStorage();
               if (activeTargetType === 'shape' && activeQuestionId === k) {
-                syncSolutionPickerUI();
               }
               renderShapesCatalog();
             }
@@ -2152,17 +2113,12 @@
         activeDifficultyBadge.classList.add('hidden');
         activeStudySub.textContent = `(${preset.hint})`;
         activeStudyBar.classList.remove('hidden');
-
-        btnSaveQuestionSolution.classList.remove('hidden');
-        btnSaveWrongSolution.classList.remove('hidden');
+        if (btnOpenLinkedSolNote) btnOpenLinkedSolNote.classList.add('hidden');
+        if (btnEditActiveQuestion) btnEditActiveQuestion.classList.add('hidden');
         if (btnToggleStudyFirstColor) {
           btnToggleStudyFirstColor.classList.remove('hidden');
           btnToggleStudyFirstColor.textContent = nextColor === 1 ? '1st: Black' : '1st: White';
         }
-        josekiReplayControls.classList.add('hidden');
-        josekiReplayControls.classList.remove('flex');
-        syncSolutionPickerUI();
-        syncBranchAndDescUI();
         syncMoveCommentUI();
 
         if (replaySol) {
@@ -2208,6 +2164,134 @@
 
       function closeSaveQuestionModal() {
         saveQuestionModal.classList.add('hidden');
+      }
+
+      function openEditQuestionModal(qId) {
+        const q = questions.find(item => item.id === qId);
+        if (!q) return;
+        editingQuestionId = qId;
+        editQTitleInput.value = q.title || '';
+        editQNotesInput.value = q.notes || '';
+        editQuestionModal.classList.remove('hidden');
+        editQTitleInput.focus();
+      }
+
+      function closeEditQuestionModal() {
+        editQuestionModal.classList.add('hidden');
+        editingQuestionId = null;
+      }
+
+      if (btnCloseEditQModal) btnCloseEditQModal.addEventListener('click', closeEditQuestionModal);
+      if (btnCancelEditQModal) btnCancelEditQModal.addEventListener('click', closeEditQuestionModal);
+      if (btnConfirmEditQModal) {
+        btnConfirmEditQModal.addEventListener('click', () => {
+          if (!editingQuestionId) return;
+          const q = questions.find(item => item.id === editingQuestionId);
+          if (!q) return;
+          q.title = editQTitleInput.value.trim() || q.title;
+          q.notes = editQNotesInput.value.trim();
+          saveDatabaseToStorage();
+          if (activeTargetType === 'question' && activeQuestionId === q.id) {
+            activeStudyTitle.textContent = `Question: ${q.title}`;
+            activeStudySub.textContent = q.notes ? `— ${q.notes}` : `(${(q.firstTurn || 1) === 1 ? 'Black' : 'White'} to play)`;
+          }
+          closeEditQuestionModal();
+          renderDatabase();
+          showStatus(`Updated "${q.title}".`);
+        });
+      }
+
+      if (btnEditActiveQuestion) {
+        btnEditActiveQuestion.addEventListener('click', () => {
+          if (activeTargetType === 'question' && activeQuestionId) {
+            openEditQuestionModal(activeQuestionId);
+          }
+        });
+      }
+
+      function openOrCreateSolutionNoteForQuestion(qId) {
+        const q = questions.find(item => item.id === qId);
+        if (!q) return;
+        normalizeQuestionSolutions(q);
+
+        // Find existing linked note or create one in "Problem Solutions" folder
+        let note = q.solutionNoteId ? lectures.find(l => l.id === q.solutionNoteId) : null;
+        if (!note) {
+          let solFolder = lectureFolders.find(f => f.name === 'Problem Solutions');
+          if (!solFolder) {
+            solFolder = {
+              id: 'lf_solutions_' + Date.now(),
+              name: 'Problem Solutions',
+              difficulty: 'Medium',
+              collapsed: false
+            };
+            lectureFolders.push(solFolder);
+          }
+          const firstSol = (q.solutions && q.solutions[0] && Array.isArray(q.solutions[0].moves))
+            ? q.solutions[0].moves.map(m => ({ ...m, comment: m.comment || '' }))
+            : [];
+          note = {
+            id: 'lec_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            title: `Solution: ${q.title}`,
+            folderId: solFolder.id,
+            linkedQuestionId: q.id,
+            difficulty: q.difficulty || 'Medium',
+            blocks: [
+              {
+                id: 'blk_' + Date.now() + '_h1',
+                type: 'heading',
+                text: `Problem & Key Tactic`
+              },
+              {
+                id: 'blk_' + Date.now() + '_t1',
+                type: 'text',
+                heading: 'Goal & Idea',
+                text: q.notes ? `${q.notes}\n\nWrite your step-by-step explanation here...` : 'Explain the key tactic and why other variations fail...'
+              },
+              {
+                id: 'blk_' + Date.now() + '_b1',
+                type: 'board',
+                caption: q.title,
+                boardSize: q.boardSize || 9,
+                setupBoard: q.board.map(r => [...r]),
+                labels: { ...(q.labels || {}) },
+                moves: firstSol,
+                step: firstSol.length,
+                firstMoveColor: q.firstTurn || 1,
+                editMode: 'play_seq'
+              },
+              {
+                id: 'blk_' + Date.now() + '_h2',
+                type: 'heading',
+                text: 'Similar Question (Same Tactic)'
+              },
+              {
+                id: 'blk_' + Date.now() + '_t2',
+                type: 'text',
+                heading: '',
+                text: 'Click "+ Full-Size Board" below and use "Import Position -> From 3. Problem Bank" to paste a similar question and compare the tactic!'
+              }
+            ],
+            updatedAt: new Date().toLocaleDateString()
+          };
+          lectures.unshift(note);
+          q.solutionNoteId = note.id;
+          saveDatabaseToStorage();
+          updateUI();
+        }
+
+        selectedLectureId = note.id;
+        setNoteHash(note.id);
+        switchTab('lectures');
+        renderDatabase();
+      }
+
+      if (btnOpenLinkedSolNote) {
+        btnOpenLinkedSolNote.addEventListener('click', () => {
+          if (activeTargetType === 'question' && activeQuestionId) {
+            openOrCreateSolutionNoteForQuestion(activeQuestionId);
+          }
+        });
       }
 
       btnOpenSaveModal.addEventListener('click', openSaveQuestionModal);
@@ -2257,7 +2341,7 @@
         saveDatabaseToStorage();
         closeSaveQuestionModal();
         loadQuestionToBoard(newQuestion.id, false, false, 0);
-        showStatus(`Saved "${title}" [${difficulty}]. Play moves (1, 2, 3...) and click "+ Save as New Sol" to add sol1!`);
+        showStatus(`Saved "${title}" [${difficulty}]. Click "Solution Note →" anytime to write explanations and add similar questions.`);
       });
 
       function createNewFolderFromSidebar() {
@@ -2421,17 +2505,10 @@
         activeSolutionReplay = { targetType, id, solIndex, branchIndex: branchIdx, step: clamped };
 
         const solName = solObj ? solObj.name : `sol${solIndex + 1}`;
-        josekiStepLabel.textContent = `${solName}: ${clamped} / ${moves.length}`;
-        josekiReplayControls.classList.remove('hidden');
-        josekiReplayControls.classList.add('flex');
-        btnSaveQuestionSolution.classList.remove('hidden');
-        btnSaveWrongSolution.classList.remove('hidden');
         if (btnToggleStudyFirstColor) {
           btnToggleStudyFirstColor.classList.remove('hidden');
           btnToggleStudyFirstColor.textContent = nextColor === 1 ? '1st: Black' : '1st: White';
         }
-        syncSolutionPickerUI();
-        syncBranchAndDescUI();
         syncMoveCommentUI();
 
         if (clamped > 0 && moves[clamped - 1] && moves[clamped - 1].comment) {
@@ -2461,8 +2538,6 @@
         activeSolutionIndex = solIdx;
         activeJosekiReplay = null;
         activeSolutionReplay = null;
-        josekiReplayControls.classList.add('hidden');
-        josekiReplayControls.classList.remove('flex');
 
         studyBaseline = {
           title: q.title,
@@ -2477,15 +2552,12 @@
 
         activeStudySub.textContent = q.notes ? `— ${q.notes}` : `(${nextColor === 1 ? 'Black' : 'White'} to play)`;
         activeStudyBar.classList.remove('hidden');
-
-        btnSaveQuestionSolution.classList.remove('hidden');
-        btnSaveWrongSolution.classList.remove('hidden');
+        if (btnOpenLinkedSolNote) btnOpenLinkedSolNote.classList.remove('hidden');
+        if (btnEditActiveQuestion) btnEditActiveQuestion.classList.remove('hidden');
         if (btnToggleStudyFirstColor) {
           btnToggleStudyFirstColor.classList.remove('hidden');
           btnToggleStudyFirstColor.textContent = nextColor === 1 ? '1st: Black' : '1st: White';
         }
-        syncSolutionPickerUI();
-        syncBranchAndDescUI();
         syncMoveCommentUI();
 
         if (showSolutionMode && q.solutions.length > 0) {
@@ -2499,80 +2571,6 @@
         updateUI();
         draw();
       }
-
-      function recordTargetVariation(solType) {
-        if (!activeTargetType || !activeQuestionId) return;
-        if (moveSequence.length === 0) {
-          showStatus('Play at least 1 move on the board first to save this variation.');
-          return;
-        }
-        const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
-        const draftDesc = solDescriptionInput ? solDescriptionInput.value.trim() : '';
-        sols.push({
-          name: '',
-          type: solType === 'wrong' ? 'wrong' : 'correct',
-          description: draftDesc,
-          branches: [],
-          moves: moveSequence.map(m => ({ ...m, comment: m.comment || '' }))
-        });
-        relabelSolutionsList(sols);
-        activeSolutionIndex = sols.length - 1;
-        activeBranchIndex = -1;
-        const savedName = sols[activeSolutionIndex].name;
-        saveDatabaseToStorage();
-        syncSolutionPickerUI();
-        syncBranchAndDescUI();
-        renderDatabase();
-        renderShapesCatalog();
-        showStatus(`Saved ${savedName} (${solType === 'wrong' ? 'Wrong / Failure variation' : 'Correct solution'}). Press [R] to reset and record another!`);
-      }
-
-      btnSaveQuestionSolution.addEventListener('click', () => recordTargetVariation('correct'));
-      btnSaveWrongSolution.addEventListener('click', () => recordTargetVariation('wrong'));
-
-      solutionSelect.addEventListener('change', () => {
-        activeSolutionIndex = parseInt(solutionSelect.value, 10) || 0;
-        if (activeTargetType && activeQuestionId) {
-          const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
-          if (sols[activeSolutionIndex]) {
-            applyTargetSolutionStep(activeTargetType, activeQuestionId, activeSolutionIndex, sols[activeSolutionIndex].moves.length);
-          }
-        }
-      });
-
-      btnShowQuestionSolution.addEventListener('click', () => {
-        if (!activeTargetType || !activeQuestionId) return;
-        const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
-        if (sols.length > 0) {
-          const idx = Math.min(activeSolutionIndex, sols.length - 1);
-          applyTargetSolutionStep(activeTargetType, activeQuestionId, idx, sols[idx].moves.length);
-        }
-      });
-
-      btnDeleteSelectedSolution.addEventListener('click', () => {
-        if (!activeTargetType || !activeQuestionId) return;
-        const sols = getTargetSolutionsArray(activeTargetType, activeQuestionId);
-        if (sols.length === 0) return;
-        const idx = Math.min(activeSolutionIndex, sols.length - 1);
-        const removedName = sols[idx].name || `sol${idx + 1}`;
-        sols.splice(idx, 1);
-        relabelSolutionsList(sols);
-        activeSolutionIndex = Math.max(0, sols.length - 1);
-        activeSolutionReplay = null;
-        saveDatabaseToStorage();
-
-        if (studyBaseline) {
-          restoreState(studyBaseline.snapshot);
-        }
-        josekiReplayControls.classList.add('hidden');
-        josekiReplayControls.classList.remove('flex');
-        syncSolutionPickerUI();
-        syncBranchAndDescUI();
-        syncMoveCommentUI();
-        renderDatabase();
-        renderShapesCatalog();
-        showStatus(`Deleted ${removedName}.`);
-      });
 
       function renderDatabase() {
         folderTotalCountEl.textContent = `${folders.length} folder${folders.length === 1 ? '' : 's'}`;
@@ -2626,6 +2624,14 @@
         if (selectedDifficultyFilter !== '__ALL__') {
           filtered = filtered.filter(q => (q.difficulty || 'Medium') === selectedDifficultyFilter);
         }
+        if (problemSearchQuery) {
+          const ql = problemSearchQuery.toLowerCase();
+          filtered = filtered.filter(q =>
+            (q.title || '').toLowerCase().includes(ql) ||
+            (q.notes || '').toLowerCase().includes(ql) ||
+            (q.difficulty || '').toLowerCase().includes(ql)
+          );
+        }
         currentFolderSubCount.textContent = `(${filtered.length})`;
 
         if (filtered.length === 0) {
@@ -2656,32 +2662,6 @@
             `<option value="${d}" ${(q.difficulty || 'Medium') === d ? 'selected' : ''}>${d}</option>`
           ).join('');
 
-          const sols = q.solutions || [];
-          const solChips = sols.length > 0
-            ? `<div class="flex flex-wrap items-center gap-1 justify-center">
-                ${sols.map((s, idx) => {
-                  const isW = s.type === 'wrong';
-                  const wrapCls = isW
-                    ? 'bg-rose-50 border-rose-200 text-rose-800'
-                    : 'bg-emerald-50 border-emerald-200 text-emerald-800';
-                  const btnHover = isW ? 'hover:bg-rose-100' : 'hover:bg-emerald-100';
-                  const delCls = isW
-                    ? 'text-rose-600 hover:text-red-700 hover:bg-red-100 border-rose-200'
-                    : 'text-emerald-600 hover:text-red-600 hover:bg-red-50 border-emerald-200';
-                  const dTip = s.description ? ` — ${s.description}` : '';
-                  return `
-                  <div class="inline-flex items-center rounded-md border text-[11px] font-medium ${wrapCls}" title="${(s.description || '').replace(/"/g, '&quot;')}">
-                    <button type="button" data-sol-q="${q.id}" data-sol-idx="${idx}" class="px-2 py-0.5 ${btnHover} rounded-l-md transition max-w-[210px] truncate">
-                      ${s.name || (isW ? 'wrong' : 'sol')}${dTip}
-                    </button>
-                    <button type="button" data-del-q-sol="${q.id}" data-sol-idx="${idx}" title="Delete this variation" class="px-1.5 py-0.5 ${delCls} rounded-r-md border-l transition">
-                      ✕
-                    </button>
-                  </div>`;
-                }).join('')}
-              </div>`
-            : `<div class="text-[11px] text-stone-400 text-center">No solutions saved yet</div>`;
-
           return `
             <div class="bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col justify-between gap-3 hover:border-stone-400 transition">
               <div class="flex flex-col gap-2">
@@ -2693,14 +2673,17 @@
                     </div>
                     <span class="text-[11px] text-stone-500">${q.boardSize || 19}×${q.boardSize || 19} · ${turnText}</span>
                   </div>
-                  <button type="button" data-del-q="${q.id}" title="Delete question" class="text-xs text-stone-400 hover:text-red-600 px-1.5 py-0.5 rounded">
-                    Delete
-                  </button>
+                  <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" data-edit-q="${q.id}" title="Edit title &amp; description" class="text-xs text-stone-500 hover:text-stone-900 px-1.5 py-0.5 rounded border border-stone-200 bg-stone-50">
+                      Edit
+                    </button>
+                    <button type="button" data-del-q="${q.id}" title="Delete question" class="text-xs text-stone-400 hover:text-red-600 px-1.5 py-0.5 rounded">
+                      Delete
+                    </button>
+                  </div>
                 </div>
 
                 <div class="flex justify-center py-1">${thumb}</div>
-
-                ${solChips}
 
                 ${q.notes ? `<p class="text-xs text-stone-600 bg-stone-50 rounded-lg px-2.5 py-1.5 border border-stone-100">${q.notes}</p>` : ''}
               </div>
@@ -2714,9 +2697,14 @@
                     ${diffOpts}
                   </select>
                 </div>
-                <button type="button" data-load-q="${q.id}" class="w-full py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
-                  Practice on Board &rarr;
-                </button>
+                <div class="flex gap-1.5">
+                  <button type="button" data-load-q="${q.id}" class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
+                    Practice &rarr;
+                  </button>
+                  <button type="button" data-solnote-q="${q.id}" class="py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition">
+                    ${q.solutionNoteId && lectures.some(l => l.id === q.solutionNoteId) ? 'Sol Note ✓' : '+ Sol Note'}
+                  </button>
+                </div>
               </div>
             </div>
           `;
@@ -2724,6 +2712,14 @@
 
         questionsGrid.querySelectorAll('[data-load-q]').forEach(btn => {
           btn.addEventListener('click', () => loadQuestionToBoard(btn.getAttribute('data-load-q'), true, false, 0));
+        });
+
+        questionsGrid.querySelectorAll('[data-edit-q]').forEach(btn => {
+          btn.addEventListener('click', () => openEditQuestionModal(btn.getAttribute('data-edit-q')));
+        });
+
+        questionsGrid.querySelectorAll('[data-solnote-q]').forEach(btn => {
+          btn.addEventListener('click', () => openOrCreateSolutionNoteForQuestion(btn.getAttribute('data-solnote-q')));
         });
 
         questionsGrid.querySelectorAll('[data-sol-q]').forEach(btn => {
@@ -2744,7 +2740,6 @@
               relabelSolutionsList(targetQ.solutions);
               saveDatabaseToStorage();
               if (activeTargetType === 'question' && activeQuestionId === id) {
-                syncSolutionPickerUI();
               }
               renderDatabase();
             }
@@ -3277,7 +3272,19 @@
           `;
         };
 
-        const rootNotes = lectures.filter(l => !l.folderId || !lectureFolders.some(f => f.id === l.folderId));
+        const matchesLectureQuery = (l) => {
+          if (!lectureSearchQuery) return true;
+          const q = lectureSearchQuery.toLowerCase();
+          if ((l.title || '').toLowerCase().includes(q)) return true;
+          return (l.blocks || []).some(b =>
+            (b.heading || '').toLowerCase().includes(q) ||
+            (b.text || '').toLowerCase().includes(q) ||
+            (b.caption || '').toLowerCase().includes(q) ||
+            (Array.isArray(b.moves) && b.moves.some(m => (m.comment || '').toLowerCase().includes(q)))
+          );
+        };
+        const visibleLectures = lectures.filter(matchesLectureQuery);
+        const rootNotes = visibleLectures.filter(l => !l.folderId || !lectureFolders.some(f => f.id === l.folderId));
         const rootZoneHtml = `
           <div id="rootDropZone" class="flex flex-col gap-1 pb-2 mb-1 border-b border-stone-100 rounded-lg transition">
             <div class="px-2 py-1 text-[11px] font-semibold text-stone-500 flex items-center justify-between">
@@ -3289,7 +3296,7 @@
         `;
 
         const foldersHtml = lectureFolders.map(fld => {
-          const items = lectures.filter(l => l.folderId === fld.id);
+          const items = visibleLectures.filter(l => l.folderId === fld.id);
           const dBadge = getShortDiffBadge(fld.difficulty || 'Medium');
           const diffOpts = ['Easy', 'Medium', 'Hard'].map(d =>
             `<option value="${d}" ${(fld.difficulty || 'Medium') === d ? 'selected' : ''}>${d}</option>`
@@ -3694,6 +3701,10 @@
               })()}
             </div>
             <div class="flex items-center gap-1.5">
+              ${lec.linkedQuestionId && questions.some(q => q.id === lec.linkedQuestionId)
+                ? `<button type="button" id="btnBackToLinkedQuestion" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-100 border border-amber-300 text-amber-900 hover:bg-amber-200 transition">&larr; Back to Question</button>`
+                : ''
+              }
               <button type="button" id="btnToggleLectureMode" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${lectureReadMode ? 'bg-stone-900 text-white' : 'bg-emerald-600 text-white hover:bg-emerald-700'} transition">
                 ${lectureReadMode ? 'Edit Page' : 'Preview Read Mode'}
               </button>
@@ -3714,6 +3725,10 @@
           </div>
         `;
 
+        const btnBackToLinkedQuestion = document.getElementById('btnBackToLinkedQuestion');
+        if (btnBackToLinkedQuestion && lec.linkedQuestionId) {
+          btnBackToLinkedQuestion.addEventListener('click', () => loadQuestionToBoard(lec.linkedQuestionId, true, false, 0));
+        }
         const btnToggleLectureMode = document.getElementById('btnToggleLectureMode');
         const btnCopyNoteLink = document.getElementById('btnCopyNoteLink');
         if (btnToggleLectureMode) {
@@ -3905,6 +3920,7 @@
             const stepTo = parseInt(btn.getAttribute('data-step-to'), 10);
             const blk = lec.blocks[idx];
             if (blk) {
+              activeInlineBoardIdx = idx;
               const maxS = Array.isArray(blk.moves) ? blk.moves.length : 0;
               blk.step = Math.max(0, Math.min(stepTo, maxS));
               saveDatabaseToStorage();
@@ -4095,6 +4111,7 @@
           svgEl.querySelectorAll('[data-bx]').forEach(cir => {
             cir.addEventListener('click', (ev) => {
               ev.stopPropagation();
+              activeInlineBoardIdx = idx;
               if (lectureReadMode) return;
               const x = parseInt(cir.getAttribute('data-bx'), 10);
               const y = parseInt(cir.getAttribute('data-by'), 10);
@@ -4141,6 +4158,32 @@
         if (!saveQuestionModal.classList.contains('hidden')) {
           if (e.key === 'Escape') closeSaveQuestionModal();
           return;
+        }
+        if (activeTab === 'board' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+          e.preventDefault();
+          if (e.key === 'ArrowLeft') btnUndo.click();
+          else btnRedo.click();
+          return;
+        }
+        if (activeTab === 'lectures' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+          const lec = lectures.find(l => l.id === selectedLectureId);
+          if (lec && Array.isArray(lec.blocks)) {
+            let targetIdx = activeInlineBoardIdx;
+            if (targetIdx === null || !lec.blocks[targetIdx] || lec.blocks[targetIdx].type !== 'board') {
+              targetIdx = lec.blocks.findIndex(b => b.type === 'board');
+            }
+            if (targetIdx >= 0 && lec.blocks[targetIdx]) {
+              e.preventDefault();
+              const blk = lec.blocks[targetIdx];
+              const maxS = Array.isArray(blk.moves) ? blk.moves.length : 0;
+              const delta = e.key === 'ArrowRight' ? 1 : -1;
+              blk.step = Math.max(0, Math.min((typeof blk.step === 'number' ? blk.step : maxS) + delta, maxS));
+              activeInlineBoardIdx = targetIdx;
+              saveDatabaseToStorage();
+              renderLectures();
+              return;
+            }
+          }
         }
         const k = e.key.toLowerCase();
         if (k === 'a') { setMode('alternate'); }
@@ -4275,6 +4318,19 @@
           };
           reader.readAsText(file);
           inputSandboxSgf.value = '';
+        });
+      }
+
+      if (problemSearchInput) {
+        problemSearchInput.addEventListener('input', () => {
+          problemSearchQuery = problemSearchInput.value.trim();
+          renderDatabase();
+        });
+      }
+      if (lectureSearchInput) {
+        lectureSearchInput.addEventListener('input', () => {
+          lectureSearchQuery = lectureSearchInput.value.trim();
+          renderLectures();
         });
       }
 
