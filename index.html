@@ -210,6 +210,9 @@
             <button type="button" id="btnSaveWrongSolution" class="hidden px-2.5 py-1 rounded-lg font-semibold bg-rose-600 text-white hover:bg-rose-700 transition">
               + Save Wrong Sol
             </button>
+            <button type="button" id="btnToggleStudyFirstColor" title="Switch who plays Move 1 (Black first vs. White first)" class="hidden px-2.5 py-1 rounded-lg font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">
+              1st: Black
+            </button>
             <button type="button" id="btnResetBaseline" class="px-2.5 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition">
               Reset to Start [R]
             </button>
@@ -508,6 +511,7 @@
       const btnSaveWrongSolution = document.getElementById('btnSaveWrongSolution');
       const btnShowQuestionSolution = document.getElementById('btnShowQuestionSolution');
       const btnDeleteSelectedSolution = document.getElementById('btnDeleteSelectedSolution');
+      const btnToggleStudyFirstColor = document.getElementById('btnToggleStudyFirstColor');
       const btnResetBaseline = document.getElementById('btnResetBaseline');
       const btnExitStudy = document.getElementById('btnExitStudy');
       const moveCommentBar = document.getElementById('moveCommentBar');
@@ -1012,6 +1016,7 @@
           solutionPickerGroup.classList.remove('flex');
           btnSaveQuestionSolution.classList.add('hidden');
           btnSaveWrongSolution.classList.add('hidden');
+          if (btnToggleStudyFirstColor) btnToggleStudyFirstColor.classList.add('hidden');
           moveCommentBar.classList.add('hidden');
           activeStudyBar.classList.add('hidden');
         }
@@ -1526,6 +1531,7 @@
         solutionPickerGroup.classList.remove('flex');
         btnSaveQuestionSolution.classList.add('hidden');
           btnSaveWrongSolution.classList.add('hidden');
+          if (btnToggleStudyFirstColor) btnToggleStudyFirstColor.classList.add('hidden');
         moveCommentBar.classList.add('hidden');
         activeStudyBar.classList.add('hidden');
         updateUI();
@@ -1546,6 +1552,27 @@
         syncMoveCommentUI();
         showStatus(`Reset to starting position: ${studyBaseline.title}`);
       });
+
+      if (btnToggleStudyFirstColor) {
+        btnToggleStudyFirstColor.addEventListener('click', () => {
+          if (!studyBaseline) return;
+          const currentFirst = (studyBaseline.snapshot && studyBaseline.snapshot.nextColor) ? studyBaseline.snapshot.nextColor : nextColor;
+          const toggledFirst = currentFirst === 1 ? 2 : 1;
+          studyBaseline.snapshot.nextColor = toggledFirst;
+          pushHistory();
+          restoreState(studyBaseline.snapshot);
+          nextColor = toggledFirst;
+          activeSolutionReplay = null;
+          josekiReplayControls.classList.add('hidden');
+          josekiReplayControls.classList.remove('flex');
+          setMode('alternate');
+          btnToggleStudyFirstColor.textContent = toggledFirst === 1 ? '1st: Black' : '1st: White';
+          syncMoveCommentUI();
+          updateUI();
+          draw();
+          showStatus(`Switched starting turn: ${toggledFirst === 1 ? 'Black' : 'White'} plays first!`);
+        });
+      }
 
       btnExitStudy.addEventListener('click', () => {
         studyBaseline = null;
@@ -2128,6 +2155,10 @@
 
         btnSaveQuestionSolution.classList.remove('hidden');
         btnSaveWrongSolution.classList.remove('hidden');
+        if (btnToggleStudyFirstColor) {
+          btnToggleStudyFirstColor.classList.remove('hidden');
+          btnToggleStudyFirstColor.textContent = nextColor === 1 ? '1st: Black' : '1st: White';
+        }
         josekiReplayControls.classList.add('hidden');
         josekiReplayControls.classList.remove('flex');
         syncSolutionPickerUI();
@@ -2347,7 +2378,7 @@
         resetState(sz, false);
         board = baseBoard.map(r => [...r]);
         labels = { ...baseLabels };
-        nextColor = firstTurn;
+        nextColor = (moves[0] && moves[0].color) ? moves[0].color : firstTurn;
         setMode('alternate');
         showNumbers = true;
 
@@ -2395,6 +2426,10 @@
         josekiReplayControls.classList.add('flex');
         btnSaveQuestionSolution.classList.remove('hidden');
         btnSaveWrongSolution.classList.remove('hidden');
+        if (btnToggleStudyFirstColor) {
+          btnToggleStudyFirstColor.classList.remove('hidden');
+          btnToggleStudyFirstColor.textContent = nextColor === 1 ? '1st: Black' : '1st: White';
+        }
         syncSolutionPickerUI();
         syncBranchAndDescUI();
         syncMoveCommentUI();
@@ -2445,6 +2480,10 @@
 
         btnSaveQuestionSolution.classList.remove('hidden');
         btnSaveWrongSolution.classList.remove('hidden');
+        if (btnToggleStudyFirstColor) {
+          btnToggleStudyFirstColor.classList.remove('hidden');
+          btnToggleStudyFirstColor.textContent = nextColor === 1 ? '1st: Black' : '1st: White';
+        }
         syncSolutionPickerUI();
         syncBranchAndDescUI();
         syncMoveCommentUI();
@@ -3598,7 +3637,12 @@
               <!-- Compact Replay & Move Remark Bar right below the Full-Size Board -->
               <div class="w-full max-w-[540px] bg-white rounded-xl p-3 border border-stone-200 flex flex-col gap-2 text-xs">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                  <span class="font-semibold text-stone-700">Move ${targetStep} / ${totalMoves}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="font-semibold text-stone-700">Move ${targetStep} / ${totalMoves}</span>
+                    <button type="button" data-blk-firstcol="${idx}" title="Switch who plays Move 1 (Black first vs. White first)" class="px-2 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-900 font-semibold hover:bg-amber-100 text-[11px] transition">
+                      1st: ${(blk.firstMoveColor || 1) === 1 ? 'Black' : 'White'}
+                    </button>
+                  </div>
                   <div class="flex items-center gap-1.5">
                     <button type="button" data-blk-step="${idx}" data-step-to="0" class="px-2.5 py-1 rounded bg-stone-50 border border-stone-300 font-semibold hover:bg-stone-100">|&lt;</button>
                     <button type="button" data-blk-step="${idx}" data-step-to="${targetStep - 1}" class="px-3 py-1 rounded bg-stone-50 border border-stone-300 font-semibold hover:bg-stone-100">&lt; Prev</button>
