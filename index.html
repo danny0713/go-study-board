@@ -39,25 +39,6 @@
       touch-action: manipulation;
       display: block;
     }
-    @media print {
-      body { background: #ffffff !important; padding: 0 !important; }
-      #appShell > div:first-child,
-      #moduleLectures > div:first-child,
-      #lectureSidebar,
-      #hoverNameTooltip,
-      .no-print { display: none !important; }
-      #moduleLectures > div.grid { display: block !important; }
-      #lectureDetailArea {
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        width: 100% !important;
-      }
-      #lectureDetailArea button:not([data-jump-question]):not([data-jump-note]),
-      #lectureDetailArea select,
-      #lectureDetailArea input { display: none !important; }
-      svg { break-inside: avoid; }
-    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-3 sm:p-5">
@@ -741,31 +722,7 @@
       let lectureSearchQuery = '';
       let activeInlineBoardIdx = null;
 
-      const INITIAL_SEED_QUESTIONS = [
-        {
-          id: "q_1794583994984_yk25",
-          title: "Retangular six with one corner missing",
-          folder: "Basic dead-or-alive",
-          difficulty: "Easy",
-          firstTurn: 1,
-          notes: "Black at D3 removes one corner of White's 2x3 eye space (E6-F4).",
-          boardSize: 9,
-          board: [
-            [0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,1,1,1,0,0],
-            [0,0,1,2,2,2,2,1,0],
-            [0,0,1,2,0,0,2,1,0],
-            [0,0,1,2,0,0,2,1,0],
-            [0,0,1,2,0,0,2,1,0],
-            [0,0,1,1,2,2,2,1,0],
-            [0,0,0,0,1,1,1,0,0],
-            [0,0,0,0,0,0,0,0,0]
-          ],
-          labels: { "4,4": "A", "5,4": "B", "4,5": "C" },
-          solutions: [],
-          createdAt: "13/11/2026"
-        }
-      ];
+      const INITIAL_SEED_QUESTIONS = [];
 
       function relabelSolutionsList(sols) {
         let cCount = 0;
@@ -4290,9 +4247,6 @@
               <button type="button" id="btnCopyNoteLink" title="Copy direct #/note/ link" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
                 Copy Link
               </button>
-              <button type="button" id="btnPrintLecture" title="Print or Save as Clean PDF Study Sheet" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
-                🖨 Print / PDF
-              </button>
               ${lectureReadMode ? '' : `
                 <button type="button" id="btnDeleteLecture" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 border border-red-200 transition">
                   Delete
@@ -4313,16 +4267,6 @@
         }
         const btnToggleLectureMode = document.getElementById('btnToggleLectureMode');
         const btnCopyNoteLink = document.getElementById('btnCopyNoteLink');
-        const btnPrintLecture = document.getElementById('btnPrintLecture');
-        if (btnPrintLecture) {
-          btnPrintLecture.addEventListener('click', () => {
-            if (!lectureReadMode) {
-              lectureReadMode = true;
-              renderLectures();
-            }
-            setTimeout(() => window.print(), 60);
-          });
-        }
         lectureDetailArea.querySelectorAll('[data-jump-question]').forEach(btn => {
           btn.addEventListener('click', () => {
             const qId = btn.getAttribute('data-jump-question');
