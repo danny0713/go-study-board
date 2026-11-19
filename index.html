@@ -2256,7 +2256,10 @@
           q.title = editQTitleInput.value.trim() || q.title;
           if (editQFolderSelect) q.folder = editQFolderSelect.value || '';
           q.notes = editQNotesInput.value.trim();
+          syncLinkedSolutionNoteForQuestion(q);
+          pruneEmptySolutionFolders();
           saveDatabaseToStorage();
+          renderLectures();
           if (activeTargetType === 'question' && activeQuestionId === q.id) {
             activeStudyTitle.textContent = `Question: ${q.title}`;
             activeStudySub.textContent = q.notes ? `— ${q.notes}` : `(${(q.firstTurn || 1) === 1 ? 'Black' : 'White'} to play)`;
@@ -2275,31 +2278,90 @@
         });
       }
 
+      function ensureSolutionFolderHierarchy(folderPath) {
+        const segments = (folderPath || '').split('/').map(s => s.trim()).filter(Boolean);
+        if (segments.length === 0) {
+          let uncat = lectureFolders.find(f => f.section === 'solutions' && !f.parentId && f.name === 'Uncategorized');
+          if (!uncat) {
+            uncat = {
+              id: 'lf_sol_uncat_' + Date.now(),
+              name: 'Uncategorized',
+              difficulty: 'Medium',
+              collapsed: false,
+              parentId: null,
+              section: 'solutions'
+            };
+            lectureFolders.push(uncat);
+          }
+          return uncat.id;
+        }
+        let parentId = null;
+        for (const seg of segments) {
+          let fld = lectureFolders.find(f => f.section === 'solutions' && (f.parentId || null) === parentId && f.name === seg);
+          if (!fld) {
+            fld = {
+              id: 'lf_sol_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+              name: seg,
+              difficulty: 'Medium',
+              collapsed: false,
+              parentId,
+              section: 'solutions'
+            };
+            lectureFolders.push(fld);
+          }
+          fld.collapsed = false;
+          parentId = fld.id;
+        }
+        return parentId;
+      }
+
+      function pruneEmptySolutionFolders() {
+        let changed = true;
+        while (changed) {
+          changed = false;
+          for (let i = lectureFolders.length - 1; i >= 0; i--) {
+            const f = lectureFolders[i];
+            if (f.section !== 'solutions') continue;
+            const hasNotes = lectures.some(l => l.folderId === f.id);
+            const hasChildren = lectureFolders.some(c => c.parentId === f.id);
+            if (!hasNotes && !hasChildren) {
+              lectureFolders.splice(i, 1);
+              changed = true;
+            }
+          }
+        }
+      }
+
+      function syncLinkedSolutionNoteForQuestion(q) {
+        if (!q) return;
+        const note = q.solutionNoteId
+          ? lectures.find(l => l.id === q.solutionNoteId)
+          : lectures.find(l => l.linkedQuestionId === q.id);
+        if (note) {
+          note.folderId = ensureSolutionFolderHierarchy(q.folder || '');
+        }
+      }
+
       function openOrCreateSolutionNoteForQuestion(qId) {
         const q = questions.find(item => item.id === qId);
         if (!q) return;
         normalizeQuestionSolutions(q);
 
-        // Find existing linked note or create one in "Problem Solutions" folder
+        // Find existing linked note or create one mirroring Module 3's folder path in "Problem Solutions"
         let note = q.solutionNoteId ? lectures.find(l => l.id === q.solutionNoteId) : null;
+        if (note) {
+          note.folderId = ensureSolutionFolderHierarchy(q.folder || '');
+          pruneEmptySolutionFolders();
+        }
         if (!note) {
-          let solFolder = lectureFolders.find(f => f.name === 'Problem Solutions');
-          if (!solFolder) {
-            solFolder = {
-              id: 'lf_solutions_' + Date.now(),
-              name: 'Problem Solutions',
-              difficulty: 'Medium',
-              collapsed: false
-            };
-            lectureFolders.push(solFolder);
-          }
+          const targetFolderId = ensureSolutionFolderHierarchy(q.folder || '');
           const firstSol = (q.solutions && q.solutions[0] && Array.isArray(q.solutions[0].moves))
             ? q.solutions[0].moves.map(m => ({ ...m, comment: m.comment || '' }))
             : [];
           note = {
             id: 'lec_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
             title: `Solution: ${q.title}`,
-            folderId: solFolder.id,
+            folderId: targetFolderId,
             linkedQuestionId: q.id,
             difficulty: q.difficulty || 'Medium',
             blocks: [
@@ -2441,10 +2503,15 @@
         const target = selectedFolderFilter;
         folders = folders.filter(f => f !== target && !f.startsWith(target + '/'));
         questions.forEach(q => {
-          if (q.folder === target || (q.folder && q.folder.startsWith(target + '/'))) q.folder = '';
+          if (q.folder === target || (q.folder && q.folder.startsWith(target + '/'))) {
+            q.folder = '';
+            syncLinkedSolutionNoteForQuestion(q);
+          }
         });
+        pruneEmptySolutionFolders();
         selectedFolderFilter = '__ALL__';
         saveDatabaseToStorage();
+        renderLectures();
         renderDatabase();
       });
 
@@ -2818,14 +2885,21 @@
                 });
                 folders = Array.from(new Set(folders));
                 questions.forEach(q => {
-                  if (q.folder === oldPath) q.folder = newPath;
-                  else if (q.folder && q.folder.startsWith(oldPath + '/')) q.folder = newPath + q.folder.slice(oldPath.length);
+                  if (q.folder === oldPath) {
+                    q.folder = newPath;
+                    syncLinkedSolutionNoteForQuestion(q);
+                  } else if (q.folder && q.folder.startsWith(oldPath + '/')) {
+                    q.folder = newPath + q.folder.slice(oldPath.length);
+                    syncLinkedSolutionNoteForQuestion(q);
+                  }
                 });
+                pruneEmptySolutionFolders();
                 if (selectedFolderFilter === oldPath) selectedFolderFilter = newPath;
                 else if (selectedFolderFilter && selectedFolderFilter.startsWith(oldPath + '/')) {
                   selectedFolderFilter = newPath + selectedFolderFilter.slice(oldPath.length);
                 }
                 saveDatabaseToStorage();
+                renderLectures();
               }
             }
             renderDatabase();
@@ -3583,10 +3657,43 @@
           `;
         };
 
-        const topLectureFolders = lectureFolders.filter(f => !f.parentId || !lectureFolders.some(p => p.id === f.parentId));
-        const foldersHtml = topLectureFolders.map(fld => renderLectureFolderBlock(fld, 0)).join('');
+        // Auto-migrate legacy "Problem Solutions" folder into section: 'solutions'
+        lectureFolders.forEach(f => {
+          if (!f.section && f.name === 'Problem Solutions') f.section = 'solutions';
+        });
 
-        lectureListEl.innerHTML = rootZoneHtml + foldersHtml;
+        const topNoteFolders = lectureFolders.filter(f => f.section !== 'solutions' && (!f.parentId || !lectureFolders.some(p => p.id === f.parentId)));
+        const topSolFolders = lectureFolders.filter(f => f.section === 'solutions' && (!f.parentId || !lectureFolders.some(p => p.id === f.parentId)));
+        const notesSecCount = topNoteFolders.reduce((acc, f) => acc + getRecursiveNoteCount(f.id), 0);
+        const solSecCount = topSolFolders.reduce((acc, f) => acc + getRecursiveNoteCount(f.id), 0);
+
+        const notesSectionHtml = `
+          <div class="pt-1 pb-2 mb-1 border-b border-stone-100">
+            <div class="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-stone-500 flex items-center justify-between">
+              <span>📚 Notes</span>
+              <span>${notesSecCount}</span>
+            </div>
+            ${topNoteFolders.length > 0
+              ? topNoteFolders.map(fld => renderLectureFolderBlock(fld, 0)).join('')
+              : '<div class="px-2 py-1 text-[11px] text-stone-400 italic">Create a folder above for study notes</div>'
+            }
+          </div>
+        `;
+
+        const solSectionHtml = `
+          <div class="pt-1">
+            <div class="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-800 flex items-center justify-between">
+              <span>🧩 Problem Solutions</span>
+              <span>${solSecCount}</span>
+            </div>
+            ${topSolFolders.length > 0
+              ? topSolFolders.map(fld => renderLectureFolderBlock(fld, 0)).join('')
+              : '<div class="px-2 py-1 text-[11px] text-stone-400 italic">Click "Sol Note" on any problem to mirror its folder here</div>'
+            }
+          </div>
+        `;
+
+        lectureListEl.innerHTML = rootZoneHtml + notesSectionHtml + solSectionHtml;
         const hoverTip = document.getElementById('hoverNameTooltip');
         if (hoverTip) {
           hoverTip.classList.add('hidden');
@@ -3626,7 +3733,8 @@
               name: 'New Section',
               difficulty: parent.difficulty || 'Medium',
               collapsed: false,
-              parentId
+              parentId,
+              section: parent.section || 'notes'
             });
             renamingFolderId = newId;
             saveDatabaseToStorage();
