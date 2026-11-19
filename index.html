@@ -39,6 +39,25 @@
       touch-action: manipulation;
       display: block;
     }
+    @media print {
+      body { background: #ffffff !important; padding: 0 !important; }
+      #appShell > div:first-child,
+      #moduleLectures > div:first-child,
+      #lectureSidebar,
+      #hoverNameTooltip,
+      .no-print { display: none !important; }
+      #moduleLectures > div.grid { display: block !important; }
+      #lectureDetailArea {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        width: 100% !important;
+      }
+      #lectureDetailArea button:not([data-jump-question]):not([data-jump-note]),
+      #lectureDetailArea select,
+      #lectureDetailArea input { display: none !important; }
+      svg { break-inside: avoid; }
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-3 sm:p-5">
@@ -333,6 +352,7 @@
                 <button type="button" data-diff-filter="Medium" class="diff-filter-btn px-2 py-1 rounded-md text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 transition">Medium (SDK)</button>
                 <button type="button" data-diff-filter="Hard" class="diff-filter-btn px-2 py-1 rounded-md text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 transition">Hard (Dan)</button>
               </div>
+              <button type="button" id="btnCornerZoom" title="Auto-crop 19x19 &amp; 13x13 thumbnails around the stones" class="btn-active px-2 py-1 rounded-md text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 transition">Corner Zoom</button>
               <button type="button" id="btnDeleteCurrentFolder" class="hidden text-xs font-medium text-red-600 hover:text-red-800 transition ml-2">
                 Delete This Folder
               </button>
@@ -699,6 +719,15 @@
       let questions = [];
       let selectedFolderFilter = '__ALL__';
       let selectedDifficultyFilter = '__ALL__';
+      let cornerZoomEnabled = true;
+      const btnCornerZoom = document.getElementById('btnCornerZoom');
+      if (btnCornerZoom) {
+        btnCornerZoom.addEventListener('click', () => {
+          cornerZoomEnabled = !cornerZoomEnabled;
+          btnCornerZoom.classList.toggle('btn-active', cornerZoomEnabled);
+          renderDatabase();
+        });
+      }
       let josekiFolders = [];
       let josekiList = [];
       let selectedJosekiFolderFilter = '__ALL__';
@@ -1941,45 +1970,105 @@
         }
       };
 
-      function renderMiniBoardSvg(boardArr, size, labelsMap = {}, vitalPt = null) {
+      function renderMiniBoardSvg(boardArr, size, labelsMap = {}, vitalPt = null, smartCrop = false) {
+        let minX = 0, maxX = size - 1, minY = 0, maxY = size - 1;
+        if (smartCrop && size >= 13) {
+          let sx0 = size, sx1 = -1, sy0 = size, sy1 = -1;
+          for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+              if (boardArr[y] && boardArr[y][x] !== 0) {
+                if (x < sx0) sx0 = x;
+                if (x > sx1) sx1 = x;
+                if (y < sy0) sy0 = y;
+                if (y > sy1) sy1 = y;
+              }
+            }
+          }
+          for (const k of Object.keys(labelsMap || {})) {
+            if (k === '__moveNums') continue;
+            const [lx, ly] = k.split(',').map(Number);
+            if (!isNaN(lx) && !isNaN(ly)) {
+              if (lx < sx0) sx0 = lx;
+              if (lx > sx1) sx1 = lx;
+              if (ly < sy0) sy0 = ly;
+              if (ly > sy1) sy1 = ly;
+            }
+          }
+          if (sx1 >= 0) {
+            let x0 = sx0 <= 3 ? 0 : Math.max(0, sx0 - 2);
+            let x1 = sx1 >= size - 4 ? size - 1 : Math.min(size - 1, sx1 + 2);
+            let y0 = sy0 <= 3 ? 0 : Math.max(0, sy0 - 2);
+            let y1 = sy1 >= size - 4 ? size - 1 : Math.min(size - 1, sy1 + 2);
+            const span = Math.min(size - 1, Math.max(6, x1 - x0, y1 - y0));
+            if (x1 - x0 < span) {
+              if (x0 === 0) x1 = Math.min(size - 1, span);
+              else if (x1 === size - 1) x0 = Math.max(0, size - 1 - span);
+              else {
+                const need = span - (x1 - x0);
+                x0 = Math.max(0, x0 - Math.floor(need / 2));
+                x1 = Math.min(size - 1, x0 + span);
+              }
+            }
+            if (y1 - y0 < span) {
+              if (y0 === 0) y1 = Math.min(size - 1, span);
+              else if (y1 === size - 1) y0 = Math.max(0, size - 1 - span);
+              else {
+                const need = span - (y1 - y0);
+                y0 = Math.max(0, y0 - Math.floor(need / 2));
+                y1 = Math.min(size - 1, y0 + span);
+              }
+            }
+            minX = x0; maxX = x1; minY = y0; maxY = y1;
+          }
+        }
+
+        const spanX = Math.max(1, maxX - minX);
+        const spanY = Math.max(1, maxY - minY);
+        const span = Math.max(spanX, spanY);
         const svgW = 156;
         const pad = 12;
-        const step = (svgW - 2 * pad) / (size - 1);
+        const step = (svgW - 2 * pad) / span;
         const r = Math.max(3, step * 0.44);
         let out = `<svg viewBox="0 0 ${svgW} ${svgW}" class="w-36 h-36 rounded-lg border border-amber-300 shadow-inner" style="background:#dfb164" xmlns="http://www.w3.org/2000/svg">`;
 
-        const end = pad + (size - 1) * step;
-        for (let i = 0; i < size; i++) {
-          const pos = (pad + i * step).toFixed(1);
-          out += `<line x1="${pad}" y1="${pos}" x2="${end}" y2="${pos}" stroke="#4a3516" stroke-width="0.8"/>`;
-          out += `<line x1="${pos}" y1="${pad}" x2="${pos}" y2="${end}" stroke="#4a3516" stroke-width="0.8"/>`;
+        const xEnd = pad + spanX * step;
+        const yEnd = pad + spanY * step;
+        for (let y = minY; y <= maxY; y++) {
+          const py = (pad + (y - minY) * step).toFixed(1);
+          const sw = (y === 0 || y === size - 1) ? '1.3' : '0.8';
+          out += `<line x1="${pad}" y1="${py}" x2="${xEnd.toFixed(1)}" y2="${py}" stroke="#4a3516" stroke-width="${sw}"/>`;
+        }
+        for (let x = minX; x <= maxX; x++) {
+          const px = (pad + (x - minX) * step).toFixed(1);
+          const sw = (x === 0 || x === size - 1) ? '1.3' : '0.8';
+          out += `<line x1="${px}" y1="${pad}" x2="${px}" y2="${yEnd.toFixed(1)}" stroke="#4a3516" stroke-width="${sw}"/>`;
         }
 
-        for (let y = 0; y < size; y++) {
-          for (let x = 0; x < size; x++) {
+        for (let y = minY; y <= maxY; y++) {
+          for (let x = minX; x <= maxX; x++) {
             const c = boardArr[y] ? boardArr[y][x] : 0;
             if (c !== 0) {
-              const cx = (pad + x * step).toFixed(1);
-              const cy = (pad + y * step).toFixed(1);
+              const cx = (pad + (x - minX) * step).toFixed(1);
+              const cy = (pad + (y - minY) * step).toFixed(1);
               const fill = c === 1 ? '#1c1c1c' : '#ffffff';
               out += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="${fill}" stroke="#3b2b13" stroke-width="0.8"/>`;
             }
           }
         }
 
-        if (vitalPt) {
-          const vx = (pad + vitalPt[0] * step).toFixed(1);
-          const vy = (pad + vitalPt[1] * step).toFixed(1);
+        if (vitalPt && vitalPt[0] >= minX && vitalPt[0] <= maxX && vitalPt[1] >= minY && vitalPt[1] <= maxY) {
+          const vx = (pad + (vitalPt[0] - minX) * step).toFixed(1);
+          const vy = (pad + (vitalPt[1] - minY) * step).toFixed(1);
           out += `<circle cx="${vx}" cy="${vy}" r="${(r * 0.72).toFixed(1)}" fill="#2563eb" stroke="#ffffff" stroke-width="1"/>`;
         }
 
         if (Array.isArray(labelsMap.__moveNums)) {
-          for (let y = 0; y < size; y++) {
-            for (let x = 0; x < size; x++) {
+          for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
               const n = labelsMap.__moveNums[y] ? labelsMap.__moveNums[y][x] : 0;
               if (n > 0 && boardArr[y] && boardArr[y][x] !== 0) {
-                const cx = (pad + x * step).toFixed(1);
-                const cy = (pad + y * step + 2.5).toFixed(1);
+                const cx = (pad + (x - minX) * step).toFixed(1);
+                const cy = (pad + (y - minY) * step + 2.5).toFixed(1);
                 const col = boardArr[y][x] === 1 ? '#ffffff' : '#1f2937';
                 const fsz = Math.max(5.5, r * 0.95).toFixed(1);
                 out += `<text x="${cx}" y="${cy}" font-size="${fsz}" font-weight="600" text-anchor="middle" fill="${col}">${n}</text>`;
@@ -1991,9 +2080,9 @@
         for (const [k, ch] of Object.entries(labelsMap || {})) {
           if (k === '__moveNums') continue;
           const [lx, ly] = k.split(',').map(Number);
-          if (lx < size && ly < size) {
-            const cx = (pad + lx * step).toFixed(1);
-            const cy = (pad + ly * step + 3).toFixed(1);
+          if (lx >= minX && lx <= maxX && ly >= minY && ly <= maxY) {
+            const cx = (pad + (lx - minX) * step).toFixed(1);
+            const cy = (pad + (ly - minY) * step + 3).toFixed(1);
             const onStone = boardArr[ly] ? boardArr[ly][lx] : 0;
             const col = onStone === 1 ? '#ffffff' : '#1f2937';
             out += `<text x="${cx}" y="${cy}" font-size="9" font-weight="700" text-anchor="middle" fill="${col}">${ch}</text>`;
@@ -2959,7 +3048,7 @@
 
         questionsGrid.innerHTML = filtered.map(q => {
           normalizeQuestionSolutions(q);
-          const thumb = renderMiniBoardSvg(q.board, q.boardSize || 19, q.labels || {}, null);
+          const thumb = renderMiniBoardSvg(q.board, q.boardSize || 19, q.labels || {}, null, cornerZoomEnabled);
           const turnText = (q.firstTurn || 1) === 1 ? 'Black to play' : 'White to play';
           const diffInfo = getDifficultyBadgeInfo(q.difficulty || 'Medium');
 
@@ -3124,6 +3213,14 @@
       function formatNoteTextHtml(raw) {
         if (!raw || !raw.trim()) return '<p class="text-stone-400 italic text-sm">Empty section.</p>';
         const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const fmt = (s) => esc(s)
+          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\[\[question:([^|\]]+)\|([^\]]+)\]\]/g, (_, qid, lbl) =>
+            `<button type="button" data-jump-question="${qid}" class="inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded-md bg-amber-100 border border-amber-300 text-amber-900 hover:bg-amber-200 text-xs font-semibold align-baseline transition">🧩 ${lbl} &rarr;</button>`
+          )
+          .replace(/\[\[note:([^|\]]+)\|([^\]]+)\]\]/g, (_, nid, lbl) =>
+            `<button type="button" data-jump-note="${nid}" class="inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded-md bg-stone-100 border border-stone-300 text-stone-800 hover:bg-stone-200 text-xs font-semibold align-baseline transition">📄 ${lbl} &rarr;</button>`
+          );
         const lines = raw.split('\n');
         let html = '';
         let inList = false;
@@ -3136,18 +3233,16 @@
           }
           if (line.startsWith('### ')) {
             if (inList) { html += '</ul>'; inList = false; }
-            html += `<h4 class="text-sm font-bold text-stone-900 mt-3 mb-1">${esc(line.slice(4))}</h4>`;
+            html += `<h4 class="text-sm font-bold text-stone-900 mt-3 mb-1">${fmt(line.slice(4))}</h4>`;
           } else if (line.startsWith('## ')) {
             if (inList) { html += '</ul>'; inList = false; }
-            html += `<h3 class="text-base font-bold text-stone-900 mt-3 mb-1">${esc(line.slice(3))}</h3>`;
+            html += `<h3 class="text-base font-bold text-stone-900 mt-3 mb-1">${fmt(line.slice(3))}</h3>`;
           } else if (line.startsWith('- ') || line.startsWith('* ')) {
             if (!inList) { html += '<ul class="list-disc pl-5 space-y-1 text-sm text-stone-700">'; inList = true; }
-            const body = esc(line.slice(2)).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-            html += `<li>${body}</li>`;
+            html += `<li>${fmt(line.slice(2))}</li>`;
           } else {
             if (inList) { html += '</ul>'; inList = false; }
-            const body = esc(line).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-            html += `<p class="text-sm text-stone-700 leading-relaxed mb-2">${body}</p>`;
+            html += `<p class="text-sm text-stone-700 leading-relaxed mb-2">${fmt(line)}</p>`;
           }
         }
         if (inList) html += '</ul>';
@@ -4035,7 +4130,16 @@
                     <button type="button" data-blk-del="${idx}" class="px-2 py-0.5 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Delete</button>
                   </div>
                 </div>
-                <textarea data-blk-text="${idx}" rows="4" placeholder="Write your concept explanation here (supports **bold** and - bullet points)..." class="w-full text-xs sm:text-sm leading-relaxed p-3 rounded-lg border border-stone-200 bg-white text-stone-800 focus:outline-none focus:border-stone-400">${blk.text || ''}</textarea>
+                <textarea data-blk-text="${idx}" rows="4" placeholder="Write your concept explanation here (supports **bold**, - bullets, and clickable problem/note links)..." class="w-full text-xs sm:text-sm leading-relaxed p-3 rounded-lg border border-stone-200 bg-white text-stone-800 focus:outline-none focus:border-stone-400">${blk.text || ''}</textarea>
+                <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <span class="text-stone-500 font-medium">🔗 Insert Link:</span>
+                  <select data-link-target-sel="${idx}" class="max-w-xs px-2 py-1 rounded-md border border-stone-200 bg-white text-stone-700 focus:outline-none">
+                    <option value="">Choose a Question or Note...</option>
+                    ${questions.length ? `<optgroup label="3. Problem Bank">${questions.map(q => `<option value="question:${q.id}|${(q.title || '').replace(/"/g, '&quot;').replace(/\|/g, '-')}">🧩 ${q.title}</option>`).join('')}</optgroup>` : ''}
+                    ${lectures.filter(other => other.id !== lec.id).length ? `<optgroup label="4. Study Notebook">${lectures.filter(other => other.id !== lec.id).map(other => `<option value="note:${other.id}|${(other.title || 'Untitled').replace(/"/g, '&quot;').replace(/\|/g, '-')}">📄 ${other.title || 'Untitled'}</option>`).join('')}</optgroup>` : ''}
+                  </select>
+                  <button type="button" data-insert-link-btn="${idx}" class="px-2.5 py-1 rounded-md font-semibold border border-stone-300 bg-white text-stone-700 hover:bg-stone-100 transition">Insert</button>
+                </div>
                 ${insertBarHtml}
               </div>
             `;
@@ -4186,6 +4290,9 @@
               <button type="button" id="btnCopyNoteLink" title="Copy direct #/note/ link" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
                 Copy Link
               </button>
+              <button type="button" id="btnPrintLecture" title="Print or Save as Clean PDF Study Sheet" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+                🖨 Print / PDF
+              </button>
               ${lectureReadMode ? '' : `
                 <button type="button" id="btnDeleteLecture" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 border border-red-200 transition">
                   Delete
@@ -4206,6 +4313,50 @@
         }
         const btnToggleLectureMode = document.getElementById('btnToggleLectureMode');
         const btnCopyNoteLink = document.getElementById('btnCopyNoteLink');
+        const btnPrintLecture = document.getElementById('btnPrintLecture');
+        if (btnPrintLecture) {
+          btnPrintLecture.addEventListener('click', () => {
+            if (!lectureReadMode) {
+              lectureReadMode = true;
+              renderLectures();
+            }
+            setTimeout(() => window.print(), 60);
+          });
+        }
+        lectureDetailArea.querySelectorAll('[data-jump-question]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const qId = btn.getAttribute('data-jump-question');
+            if (qId && questions.some(q => q.id === qId)) loadQuestionToBoard(qId, true, false, 0);
+            else showStatus('Linked question not found in Problem Bank.');
+          });
+        });
+        lectureDetailArea.querySelectorAll('[data-jump-note]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const nId = btn.getAttribute('data-jump-note');
+            if (nId && lectures.some(l => l.id === nId)) {
+              selectedLectureId = nId;
+              setNoteHash(nId);
+              renderLectures();
+            } else showStatus('Linked note not found in Study Notebook.');
+          });
+        });
+        lectureDetailArea.querySelectorAll('[data-insert-link-btn]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-insert-link-btn'), 10);
+            const sel = lectureDetailArea.querySelector(`[data-link-target-sel="${idx}"]`);
+            const ta = lectureDetailArea.querySelector(`[data-blk-text="${idx}"]`);
+            if (!sel || !sel.value || !ta) return;
+            const token = `[[${sel.value}]]`;
+            const start = ta.selectionStart ?? ta.value.length;
+            const end = ta.selectionEnd ?? ta.value.length;
+            ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
+            lec.blocks[idx].text = ta.value;
+            saveDatabaseToStorage();
+            ta.focus();
+            ta.setSelectionRange(start + token.length, start + token.length);
+            sel.value = '';
+          });
+        });
         if (btnToggleLectureMode) {
           btnToggleLectureMode.addEventListener('click', () => {
             lectureReadMode = !lectureReadMode;
