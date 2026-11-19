@@ -356,6 +356,9 @@
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
+          <button type="button" id="btnToggleLectureSidebar" title="Collapse or expand the folders sidebar" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
+            ◀ Hide Sidebar
+          </button>
           <button type="button" id="btnNewLecture" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
             + New Note
           </button>
@@ -374,7 +377,12 @@
         <div id="lectureSidebar" class="lg:col-span-3 bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col gap-2.5 lg:sticky lg:top-4">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Folders &amp; Notes</span>
-            <span id="lectureListCount" class="text-xs text-stone-400">0</span>
+            <div class="flex items-center gap-1.5">
+              <button type="button" id="btnWidenLectureSidebar" title="Toggle wider sidebar" class="hidden lg:inline-block text-[11px] px-1.5 py-0.5 rounded border border-stone-200 text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition">
+                ↔
+              </button>
+              <span id="lectureListCount" class="text-xs text-stone-400">0</span>
+            </div>
           </div>
           <input id="lectureSearchInput" type="search" placeholder="Search notes &amp; remarks..." class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-800 focus:outline-none focus:bg-white focus:border-stone-400">
           <div class="flex items-center gap-1">
@@ -552,9 +560,48 @@
       const btnCreateLectureFolder = document.getElementById('btnCreateLectureFolder');
       const btnExportLectures = document.getElementById('btnExportLectures');
       const inputImportLectures = document.getElementById('inputImportLectures');
+      const lectureSidebar = document.getElementById('lectureSidebar');
+      const btnToggleLectureSidebar = document.getElementById('btnToggleLectureSidebar');
+      const btnWidenLectureSidebar = document.getElementById('btnWidenLectureSidebar');
       const lectureListCount = document.getElementById('lectureListCount');
       const lectureListEl = document.getElementById('lectureListEl');
       const lectureDetailArea = document.getElementById('lectureDetailArea');
+      let lectureSidebarCollapsed = false;
+      let lectureSidebarWide = false;
+      let renamingFolderId = null;
+
+      function applyLectureSidebarLayout() {
+        if (!lectureSidebar || !lectureDetailArea) return;
+        lectureSidebar.classList.toggle('hidden', lectureSidebarCollapsed);
+        lectureSidebar.classList.remove('lg:col-span-3', 'lg:col-span-4');
+        lectureDetailArea.classList.remove('lg:col-span-9', 'lg:col-span-8', 'lg:col-span-12');
+        if (lectureSidebarCollapsed) {
+          lectureDetailArea.classList.add('lg:col-span-12');
+          if (btnToggleLectureSidebar) {
+            btnToggleLectureSidebar.textContent = '▶ Show Sidebar';
+            btnToggleLectureSidebar.classList.add('btn-active');
+          }
+        } else {
+          lectureSidebar.classList.add(lectureSidebarWide ? 'lg:col-span-4' : 'lg:col-span-3');
+          lectureDetailArea.classList.add(lectureSidebarWide ? 'lg:col-span-8' : 'lg:col-span-9');
+          if (btnToggleLectureSidebar) {
+            btnToggleLectureSidebar.textContent = '◀ Hide Sidebar';
+            btnToggleLectureSidebar.classList.remove('btn-active');
+          }
+        }
+      }
+      if (btnToggleLectureSidebar) {
+        btnToggleLectureSidebar.addEventListener('click', () => {
+          lectureSidebarCollapsed = !lectureSidebarCollapsed;
+          applyLectureSidebarLayout();
+        });
+      }
+      if (btnWidenLectureSidebar) {
+        btnWidenLectureSidebar.addEventListener('click', () => {
+          lectureSidebarWide = !lectureSidebarWide;
+          applyLectureSidebarLayout();
+        });
+      }
 
 
       // Module 2: Go Shapes
@@ -3259,7 +3306,7 @@
           const dBadge = getShortDiffBadge(l.difficulty || 'Medium');
           return `
             <div draggable="true" data-lec-drag="${l.id}" class="lec-drag-row rounded-lg border transition ${indented ? 'ml-3' : ''} ${active ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100 border-stone-200'}">
-              <button type="button" data-select-lec="${l.id}" class="w-full text-left px-2 py-1.5 text-xs font-medium flex items-center gap-1.5">
+              <button type="button" data-select-lec="${l.id}" title="${(l.title || 'Untitled Note').replace(/"/g, '&quot;')}" data-hover-name="${(l.title || 'Untitled Note').replace(/"/g, '&quot;')}" class="w-full text-left px-2 py-1.5 text-xs font-medium flex items-center gap-1.5">
                 <span class="cursor-grab opacity-45 hover:opacity-90 text-[11px] shrink-0" title="Drag note to reorder or move into a folder">⋮⋮</span>
                 <span class="text-[11px] shrink-0">📄</span>
                 <span class="flex-1 min-w-0 flex flex-col">
@@ -3305,17 +3352,25 @@
           return `
             <div draggable="true" data-folder-drag="${fld.id}" class="folder-drag-block flex flex-col gap-1 mb-1 rounded-lg border border-stone-200 bg-stone-50/50 p-1 transition">
               <div class="flex items-center justify-between gap-1 px-1 py-1 rounded hover:bg-stone-100">
-                <button type="button" data-toggle-fld="${fld.id}" class="flex-1 min-w-0 flex items-center gap-1.5 text-left text-xs font-semibold text-stone-800">
-                  <span class="cursor-grab opacity-45 hover:opacity-90 text-[11px] shrink-0" title="Drag folder to reorder">⋮⋮</span>
-                  <span class="text-[10px] w-3 inline-block shrink-0">${fld.collapsed ? '▸' : '▾'}</span>
-                  <span class="shrink-0">📁</span>
-                  <span class="truncate">${fld.name}</span>
-                  <span class="text-[10px] text-stone-400 font-normal shrink-0">(${items.length})</span>
-                </button>
+                ${renamingFolderId === fld.id ? `
+                  <div class="flex-1 min-w-0 flex items-center gap-1">
+                    <span class="shrink-0 text-xs">📁</span>
+                    <input type="text" data-rename-input="${fld.id}" value="${(fld.name || '').replace(/"/g, '&quot;')}" class="w-full min-w-0 text-xs font-semibold px-1.5 py-0.5 rounded border border-stone-400 bg-white text-stone-900 focus:outline-none">
+                  </div>
+                ` : `
+                  <button type="button" data-toggle-fld="${fld.id}" title="${(fld.name || '').replace(/"/g, '&quot;')}" data-hover-name="${(fld.name || '').replace(/"/g, '&quot;')}" class="flex-1 min-w-0 flex items-center gap-1.5 text-left text-xs font-semibold text-stone-800">
+                    <span class="cursor-grab opacity-45 hover:opacity-90 text-[11px] shrink-0" title="Drag folder to reorder">⋮⋮</span>
+                    <span class="text-[10px] w-3 inline-block shrink-0">${fld.collapsed ? '▸' : '▾'}</span>
+                    <span class="shrink-0">📁</span>
+                    <span class="truncate">${fld.name}</span>
+                    <span class="text-[10px] text-stone-400 font-normal shrink-0">(${items.length})</span>
+                  </button>
+                `}
                 <div class="flex items-center gap-1 shrink-0">
                   <select data-fld-diff="${fld.id}" aria-label="Folder difficulty" class="text-[10px] font-semibold px-1 py-0.5 rounded border ${dBadge.cls} focus:outline-none">
                     ${diffOpts}
                   </select>
+                  <button type="button" data-rename-fld="${fld.id}" title="Rename folder" class="text-[11px] text-stone-400 hover:text-stone-800 px-0.5">✎</button>
                   <button type="button" data-del-fld="${fld.id}" title="Delete folder (notes move to Root)" class="text-[11px] text-stone-400 hover:text-red-600 px-1">✕</button>
                 </div>
               </div>
@@ -3329,6 +3384,70 @@
         }).join('');
 
         lectureListEl.innerHTML = rootZoneHtml + foldersHtml;
+        const hoverTip = document.getElementById('hoverNameTooltip');
+        if (hoverTip) {
+          hoverTip.classList.add('hidden');
+          lectureListEl.querySelectorAll('[data-hover-name]').forEach(el => {
+            el.addEventListener('mouseenter', (e) => {
+              const name = el.getAttribute('data-hover-name');
+              if (!name) return;
+              hoverTip.textContent = name;
+              hoverTip.classList.remove('hidden');
+              const rect = el.getBoundingClientRect();
+              const tipW = hoverTip.offsetWidth || 180;
+              const left = Math.min(window.innerWidth - tipW - 12, Math.max(8, rect.left + 12));
+              const top = Math.max(8, rect.top - hoverTip.offsetHeight - 6);
+              hoverTip.style.left = `${left}px`;
+              hoverTip.style.top = `${top}px`;
+            });
+            el.addEventListener('mouseleave', () => {
+              hoverTip.classList.add('hidden');
+            });
+            el.addEventListener('dragstart', () => {
+              hoverTip.classList.add('hidden');
+            });
+          });
+        }
+
+        // Folder rename button & inline input
+        lectureListEl.querySelectorAll('[data-rename-fld]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const fId = btn.getAttribute('data-rename-fld');
+            renamingFolderId = fId;
+            renderLectures();
+          });
+        });
+        lectureListEl.querySelectorAll('[data-rename-input]').forEach(inp => {
+          const fId = inp.getAttribute('data-rename-input');
+          inp.focus();
+          inp.select();
+          let committed = false;
+          const commitRename = () => {
+            if (committed) return;
+            committed = true;
+            const newName = inp.value.trim();
+            const fld = lectureFolders.find(f => f.id === fId);
+            if (fld && newName) {
+              fld.name = newName;
+              saveDatabaseToStorage();
+            }
+            renamingFolderId = null;
+            renderLectures();
+          };
+          inp.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commitRename();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              committed = true;
+              renamingFolderId = null;
+              renderLectures();
+            }
+          });
+          inp.addEventListener('blur', commitRename);
+        });
 
         // Folder collapse/expand
         lectureListEl.querySelectorAll('[data-toggle-fld]').forEach(btn => {
@@ -3523,6 +3642,7 @@
           const moveDownBtn = idx < lec.blocks.length - 1
             ? `<button type="button" data-blk-down="${idx}" title="Move block down" class="px-2 py-0.5 rounded border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 text-[11px]">↓</button>`
             : '';
+          const dupBtn = `<button type="button" data-blk-dup="${idx}" title="Duplicate this block right below" class="px-2 py-0.5 rounded border border-stone-200 bg-white text-stone-700 hover:bg-stone-100 text-[11px]">Duplicate</button>`;
           const insertBarHtml = lectureReadMode ? '' : `
             <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-stone-200/70">
               <span class="text-[11px] text-stone-400 mr-1">Insert below:</span>
@@ -3543,6 +3663,7 @@
                   <div class="flex items-center gap-1">
                     ${moveUpBtn}
                     ${moveDownBtn}
+                    ${dupBtn}
                     <button type="button" data-blk-del="${idx}" class="px-2 py-0.5 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Delete</button>
                   </div>
                 </div>
@@ -3568,6 +3689,7 @@
                   <div class="flex items-center gap-1">
                     ${moveUpBtn}
                     ${moveDownBtn}
+                    ${dupBtn}
                     <button type="button" data-blk-del="${idx}" class="px-2 py-0.5 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Delete</button>
                   </div>
                 </div>
@@ -3633,6 +3755,7 @@
                   <div class="flex items-center gap-1">
                     ${moveUpBtn}
                     ${moveDownBtn}
+                    ${dupBtn}
                     <button type="button" data-blk-del="${idx}" class="px-2 py-0.5 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-[11px]">Delete</button>
                   </div>
                 `}
@@ -3898,6 +4021,19 @@
               saveDatabaseToStorage();
               renderLectures();
             }
+          });
+        });
+
+        lectureDetailArea.querySelectorAll('[data-blk-dup]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-blk-dup'), 10);
+            const orig = lec.blocks[idx];
+            if (!orig) return;
+            const clone = JSON.parse(JSON.stringify(orig));
+            clone.id = 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            lec.blocks.splice(idx + 1, 0, clone);
+            saveDatabaseToStorage();
+            renderLectures();
           });
         });
 
@@ -4348,5 +4484,6 @@
       };
     })();
   </script>
+  <div id="hoverNameTooltip" class="hidden fixed z-50 pointer-events-none px-2.5 py-1.5 rounded-lg bg-stone-900/95 text-white text-xs font-medium shadow-lg max-w-xs break-words"></div>
 </body>
 </html>
