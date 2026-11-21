@@ -79,20 +79,23 @@
             Restore All
           </label>
           <input id="inputRestoreAll" type="file" accept=".json,application/json" class="hidden">
+          <button type="button" id="btnLangToggle" title="Switch UI Language (English / 繁體中文)" class="px-2 py-1 rounded-md text-[11px] font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition">
+            繁體中文
+          </button>
         </div>
         <span id="turnBadge" class="text-xs font-medium px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
           Next: Black
         </span>
         <span class="flex items-center gap-1.5" title="Black stones captured by White">
           <span class="w-3 h-3 rounded-full bg-stone-900 inline-block"></span>
-          Captured: <strong id="blackCaps" class="text-stone-900">0</strong>
+          <span data-i18n="capturedLbl">Captured:</span> <strong id="blackCaps" class="text-stone-900">0</strong>
         </span>
         <span class="flex items-center gap-1.5" title="White stones captured by Black">
           <span class="w-3 h-3 rounded-full bg-white border border-stone-400 inline-block"></span>
-          Captured: <strong id="whiteCaps" class="text-stone-900">0</strong>
+          <span data-i18n="capturedLbl">Captured:</span> <strong id="whiteCaps" class="text-stone-900">0</strong>
         </span>
         <span class="text-stone-400">|</span>
-        <span>Moves: <strong id="moveCount" class="text-stone-900">0</strong></span>
+        <span><span data-i18n="movesLbl">Moves:</span> <strong id="moveCount" class="text-stone-900">0</strong></span>
       </div>
     </div>
 
@@ -175,7 +178,12 @@
             <span class="text-amber-700" id="activeStudySub"></span>
           </div>
           <div class="flex items-center gap-1.5 flex-wrap">
-
+            <button type="button" id="btnPrevQuestion" title="Load previous question in current folder/filter" class="hidden px-2 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 disabled:opacity-40 transition">
+              &larr; Prev
+            </button>
+            <button type="button" id="btnNextQuestion" title="Load next question in current folder/filter" class="hidden px-2 py-1 rounded-lg font-medium bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 disabled:opacity-40 transition">
+              Next &rarr;
+            </button>
             <button type="button" id="btnOpenLinkedSolNote" title="Open or write a full-page Solution Note (with text + similar question boards) for this question" class="hidden px-2.5 py-1 rounded-lg font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition">
               Solution Note &rarr;
             </button>
@@ -487,6 +495,13 @@
           <select id="editQFolderSelect" class="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400"></select>
         </div>
         <div>
+          <label for="editQFirstTurnSelect" class="block font-medium text-stone-700 mb-1">Who Plays First?</label>
+          <select id="editQFirstTurnSelect" class="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400">
+            <option value="1">Black plays first</option>
+            <option value="2">White plays first</option>
+          </select>
+        </div>
+        <div>
           <label for="editQNotesInput" class="block font-medium text-stone-700 mb-1">Whole Question Description / Goal</label>
           <textarea id="editQNotesInput" rows="3" placeholder="Describe the situation, goal, or hint for the whole question..." class="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:bg-white focus:border-stone-400"></textarea>
         </div>
@@ -543,6 +558,7 @@
       const btnConfirmEditQModal = document.getElementById('btnConfirmEditQModal');
       const editQTitleInput = document.getElementById('editQTitleInput');
       const editQFolderSelect = document.getElementById('editQFolderSelect');
+      const editQFirstTurnSelect = document.getElementById('editQFirstTurnSelect');
       const editQNotesInput = document.getElementById('editQNotesInput');
       let collapsedProblemFolders = new Set();
       let renamingProblemFolder = null;
@@ -1068,7 +1084,9 @@
           activeQuestionId = null;
           activeSolutionReplay = null;
           if (btnToggleStudyFirstColor) btnToggleStudyFirstColor.classList.add('hidden');
-          if (btnOpenLinkedSolNote) btnOpenLinkedSolNote.classList.add('hidden');
+          if (btnPrevQuestion) btnPrevQuestion.classList.add('hidden');
+        if (btnNextQuestion) btnNextQuestion.classList.add('hidden');
+        if (btnOpenLinkedSolNote) btnOpenLinkedSolNote.classList.add('hidden');
           if (btnEditActiveQuestion) btnEditActiveQuestion.classList.add('hidden');
           moveCommentBar.classList.add('hidden');
           activeStudyBar.classList.add('hidden');
@@ -1382,15 +1400,15 @@
 
       function updateUI() {
         if (mode === 'alternate') {
-          turnBadge.textContent = `Next: ${nextColor === 1 ? 'Black' : 'White'}`;
+          turnBadge.textContent = nextColor === 1 ? t('nextBlack') : t('nextWhite');
         } else if (mode === 'black') {
-          turnBadge.textContent = 'Free Place: Black';
+          turnBadge.textContent = t('freeBlack');
         } else if (mode === 'white') {
-          turnBadge.textContent = 'Free Place: White';
+          turnBadge.textContent = t('freeWhite');
         } else if (mode === 'erase') {
-          turnBadge.textContent = 'Mode: Erase Stones';
+          turnBadge.textContent = t('modeErase');
         } else {
-          turnBadge.textContent = 'Mode: A/B/C Markers';
+          turnBadge.textContent = t('modeLabel');
         }
 
         blackCapsEl.textContent = blackCaptured;
@@ -1401,7 +1419,7 @@
 
         btnUndo.disabled = history.length === 0;
         btnRedo.disabled = redoStack.length === 0;
-        btnNumbers.textContent = showNumbers ? '# On [N]' : '# Off [N]';
+        btnNumbers.textContent = showNumbers ? t('numsOn') : t('numsOff');
         btnNumbers.classList.toggle('btn-active', showNumbers);
         btnCoords.classList.toggle('btn-active', showCoords);
         btnCapture.classList.toggle('btn-active', autoCapture);
@@ -1733,7 +1751,9 @@
         activeQuestionId = null;
         activeSolutionReplay = null;
           if (btnToggleStudyFirstColor) btnToggleStudyFirstColor.classList.add('hidden');
-          if (btnOpenLinkedSolNote) btnOpenLinkedSolNote.classList.add('hidden');
+          if (btnPrevQuestion) btnPrevQuestion.classList.add('hidden');
+        if (btnNextQuestion) btnNextQuestion.classList.add('hidden');
+        if (btnOpenLinkedSolNote) btnOpenLinkedSolNote.classList.add('hidden');
           if (btnEditActiveQuestion) btnEditActiveQuestion.classList.add('hidden');
         moveCommentBar.classList.add('hidden');
         activeStudyBar.classList.add('hidden');
@@ -2214,6 +2234,8 @@
         activeDifficultyBadge.classList.add('hidden');
         activeStudySub.textContent = `(${preset.hint})`;
         activeStudyBar.classList.remove('hidden');
+        if (btnPrevQuestion) btnPrevQuestion.classList.add('hidden');
+        if (btnNextQuestion) btnNextQuestion.classList.add('hidden');
         if (btnOpenLinkedSolNote) btnOpenLinkedSolNote.classList.add('hidden');
         if (btnEditActiveQuestion) btnEditActiveQuestion.classList.add('hidden');
         if (btnToggleStudyFirstColor) {
@@ -2282,6 +2304,7 @@
         editingQuestionId = qId;
         editQTitleInput.value = q.title || '';
         if (editQFolderSelect) editQFolderSelect.innerHTML = buildProblemFolderOptionsHtml(q.folder || '');
+        if (editQFirstTurnSelect) editQFirstTurnSelect.value = String(q.firstTurn || 1);
         editQNotesInput.value = q.notes || '';
         editQuestionModal.classList.remove('hidden');
         editQTitleInput.focus();
@@ -2301,7 +2324,16 @@
           if (!q) return;
           q.title = editQTitleInput.value.trim() || q.title;
           if (editQFolderSelect) q.folder = editQFolderSelect.value || '';
+          if (editQFirstTurnSelect) q.firstTurn = parseInt(editQFirstTurnSelect.value, 10) || 1;
           q.notes = editQNotesInput.value.trim();
+          if (activeTargetType === 'question' && activeQuestionId === q.id && moveSequence.length === 0) {
+            nextColor = q.firstTurn;
+            if (studyBaseline && studyBaseline.snapshot) studyBaseline.snapshot.nextColor = nextColor;
+            if (btnToggleStudyFirstColor) {
+              btnToggleStudyFirstColor.textContent = nextColor === 1 ? '1st: Black' : '1st: White';
+            }
+            updateUI();
+          }
           syncLinkedSolutionNoteForQuestion(q);
           pruneEmptySolutionFolders();
           saveDatabaseToStorage();
@@ -2709,6 +2741,45 @@
         draw();
       }
 
+      const btnPrevQuestion = document.getElementById('btnPrevQuestion');
+      const btnNextQuestion = document.getElementById('btnNextQuestion');
+
+      function getFilteredQuestionsList() {
+        let filtered = questions;
+        if (selectedFolderFilter === '__UNCATEGORIZED__') {
+          filtered = questions.filter(q => !q.folder);
+        } else if (selectedFolderFilter !== '__ALL__') {
+          filtered = questions.filter(q => q.folder === selectedFolderFilter || (q.folder && q.folder.startsWith(selectedFolderFilter + '/')));
+        }
+        if (selectedDifficultyFilter !== '__ALL__') {
+          filtered = filtered.filter(q => (q.difficulty || 'Medium') === selectedDifficultyFilter);
+        }
+        if (problemSearchQuery) {
+          const ql = problemSearchQuery.toLowerCase();
+          filtered = filtered.filter(q =>
+            (q.title || '').toLowerCase().includes(ql) ||
+            (q.notes || '').toLowerCase().includes(ql) ||
+            (q.difficulty || '').toLowerCase().includes(ql)
+          );
+        }
+        return filtered.length > 0 ? filtered : questions;
+      }
+
+      if (btnPrevQuestion) {
+        btnPrevQuestion.addEventListener('click', () => {
+          const list = getFilteredQuestionsList();
+          const idx = list.findIndex(q => q.id === activeQuestionId);
+          if (idx > 0) loadQuestionToBoard(list[idx - 1].id, false, false, 0);
+        });
+      }
+      if (btnNextQuestion) {
+        btnNextQuestion.addEventListener('click', () => {
+          const list = getFilteredQuestionsList();
+          const idx = list.findIndex(q => q.id === activeQuestionId);
+          if (idx >= 0 && idx < list.length - 1) loadQuestionToBoard(list[idx + 1].id, false, false, 0);
+        });
+      }
+
       function loadQuestionToBoard(qId, switchToBoardTab = true, showSolutionMode = false, solIdx = 0) {
         const q = questions.find(item => item.id === qId);
         if (!q) return;
@@ -2740,6 +2811,14 @@
 
         activeStudySub.textContent = q.notes ? `— ${q.notes}` : `(${nextColor === 1 ? 'Black' : 'White'} to play)`;
         activeStudyBar.classList.remove('hidden');
+        if (btnPrevQuestion && btnNextQuestion) {
+          const list = getFilteredQuestionsList();
+          const idx = list.findIndex(item => item.id === q.id);
+          btnPrevQuestion.classList.remove('hidden');
+          btnNextQuestion.classList.remove('hidden');
+          btnPrevQuestion.disabled = idx <= 0;
+          btnNextQuestion.disabled = idx < 0 || idx >= list.length - 1;
+        }
         if (btnOpenLinkedSolNote) btnOpenLinkedSolNote.classList.remove('hidden');
         if (btnEditActiveQuestion) btnEditActiveQuestion.classList.remove('hidden');
         if (btnToggleStudyFirstColor) {
@@ -2767,11 +2846,11 @@
         const uncatCount = questions.filter(q => !q.folder).length;
         let folderHtml = `
           <button type="button" data-folder-filter="__ALL__" class="folder-filter-btn ${selectedFolderFilter === '__ALL__' ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex items-center justify-between transition">
-            <span>All Questions</span>
+            <span>${t('allQuestions')}</span>
             <span class="opacity-75">${questions.length}</span>
           </button>
           <button type="button" data-folder-filter="__UNCATEGORIZED__" class="folder-filter-btn ${selectedFolderFilter === '__UNCATEGORIZED__' ? 'folder-active' : 'bg-stone-50 text-stone-700 hover:bg-stone-100'} w-full px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 flex items-center justify-between transition">
-            <span>Uncategorized</span>
+            <span>${t('uncategorized')}</span>
             <span class="opacity-75">${uncatCount}</span>
           </button>
         `;
@@ -3651,7 +3730,7 @@
         const rootZoneHtml = `
           <div id="rootDropZone" class="flex flex-col gap-1 pb-2 mb-1 border-b border-stone-100 rounded-lg transition">
             <div class="px-2 py-1 text-[11px] font-semibold text-stone-500 flex items-center justify-between">
-              <span>Root (Unfiled)</span>
+              <span>${t('rootUnfiled')}</span>
               <span>${rootNotes.length}</span>
             </div>
             ${rootNotes.length > 0 ? rootNotes.map(l => renderNoteRow(l, false)).join('') : '<div class="px-2 py-1 text-[11px] text-stone-400 italic">Drop note here for Root</div>'}
@@ -3722,7 +3801,7 @@
         const notesSectionHtml = `
           <div class="pt-1 pb-2 mb-1 border-b border-stone-100">
             <div class="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-stone-500 flex items-center justify-between">
-              <span>📚 Notes</span>
+              <span>${t('notesSec')}</span>
               <span>${notesSecCount}</span>
             </div>
             ${topNoteFolders.length > 0
@@ -3735,7 +3814,7 @@
         const solSectionHtml = `
           <div class="pt-1">
             <div class="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-800 flex items-center justify-between">
-              <span>🧩 Problem Solutions</span>
+              <span>${t('solSec')}</span>
               <span>${solSecCount}</span>
             </div>
             ${topSolFolders.length > 0
@@ -4238,14 +4317,14 @@
             </div>
             <div class="flex items-center gap-1.5">
               ${lec.linkedQuestionId && questions.some(q => q.id === lec.linkedQuestionId)
-                ? `<button type="button" id="btnBackToLinkedQuestion" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-100 border border-amber-300 text-amber-900 hover:bg-amber-200 transition">&larr; Back to Question</button>`
+                ? `<button type="button" id="btnBackToLinkedQuestion" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-100 border border-amber-300 text-amber-900 hover:bg-amber-200 transition">${t('backToQ')}</button>`
                 : ''
               }
               <button type="button" id="btnToggleLectureMode" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${lectureReadMode ? 'bg-stone-900 text-white' : 'bg-emerald-600 text-white hover:bg-emerald-700'} transition">
-                ${lectureReadMode ? 'Edit Page' : 'Preview Read Mode'}
+                ${lectureReadMode ? t('editPage') : t('previewRead')}
               </button>
               <button type="button" id="btnCopyNoteLink" title="Copy direct #/note/ link" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition">
-                Copy Link
+                ${t('copyLink')}
               </button>
               ${lectureReadMode ? '' : `
                 <button type="button" id="btnDeleteLecture" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 border border-red-200 transition">
@@ -4917,6 +4996,342 @@
         });
       }
 
+
+      // ==========================================
+      // BILINGUAL UI SYSTEM (EN / 繁體中文)
+      // ==========================================
+      const STORAGE_LANG_KEY = 'go_study_lang';
+      let currentLang = localStorage.getItem(STORAGE_LANG_KEY) || 'en';
+      const btnLangToggle = document.getElementById('btnLangToggle');
+
+      const I18N = {
+        en: {
+          brand: 'Go Study Board',
+          tabBoard: '1. Sandbox Board',
+          tabShapes: '2. Eye Shapes',
+          tabDatabase: '3. Problem Bank',
+          tabLectures: '4. Study Notebook',
+          backupAll: 'Backup All',
+          restoreAll: 'Restore All',
+          langBtn: '繁體中文',
+          capturedLbl: 'Captured:',
+          movesLbl: 'Moves:',
+          nextBlack: 'Next: Black',
+          nextWhite: 'Next: White',
+          freeBlack: 'Free Place: Black',
+          freeWhite: 'Free Place: White',
+          modeErase: 'Mode: Erase Stones',
+          modeLabel: 'Mode: A/B/C Markers',
+          modeAltHtml: 'Alternate <kbd class="ml-1 opacity-60 font-sans">[A]</kbd>',
+          modeBlackHtml: '<span class="w-2.5 h-2.5 rounded-full bg-stone-900 inline-block"></span> Black <kbd class="opacity-60 font-sans">[B]</kbd>',
+          modeWhiteHtml: '<span class="w-2.5 h-2.5 rounded-full bg-white border border-stone-400 inline-block"></span> White <kbd class="opacity-60 font-sans">[W]</kbd>',
+          modeEraseHtml: 'Erase <kbd class="ml-1 opacity-60 font-sans">[E]</kbd>',
+          modeLabelHtml: 'Mark A/B/C <kbd class="ml-1 opacity-60 font-sans">[M]</kbd>',
+          undo: 'Undo [Z]',
+          redo: 'Redo [Y]',
+          numsOn: '# On [N]',
+          numsOff: '# Off [N]',
+          coords: 'Coords [C]',
+          capture: 'Capture [K]',
+          sound: 'Sound [S]',
+          score: 'Score',
+          clear: 'Clear [X]',
+          importSgf: 'Import .sgf',
+          exportSgf: 'Export .sgf',
+          saveQuestionBtn: '+ Save Question [Q]',
+          prevQ: '← Prev',
+          nextQ: 'Next →',
+          solNoteArrow: 'Solution Note →',
+          editInfoBtn: 'Edit Info',
+          resetBaseBtn: 'Reset to Start [R]',
+          dismissBtn: 'Dismiss',
+          saveMoveRemark: 'Save Move Remark',
+          scoreModeLbl: 'Score Mode (Click dead stones):',
+          ruleTerr: 'Korean / Japanese (+6.5, Territory)',
+          ruleChin: 'Chinese (+7.5, Area + Stones)',
+          exitScoreMode: 'Exit Score Mode',
+          shapeLibLbl: 'Shape Library:',
+          loadShapeBtn: 'Load Shape',
+          shapeHintDefault: 'Select any classic eye shape card below to inspect its vital point or test it on the board.',
+          dbTitle: 'Personal Question Database',
+          dbSub: 'Set up any stones on the Blank Board and click + Save Question [Q] to add problems and organize them into folders.',
+          goToBoardFromDb: '+ Set Up New Question on Board',
+          exportDb: 'Export JSON',
+          importDb: 'Import JSON',
+          foldersTitle: 'Folders',
+          createFolder: 'Add',
+          diffLbl: 'Difficulty:',
+          diffAll: 'All',
+          diffEasy: 'Easy (DDK)',
+          diffMed: 'Medium (SDK)',
+          diffHard: 'Hard (Dan)',
+          cornerZoom: 'Corner Zoom',
+          delFolder: 'Delete This Folder',
+          nbTitle: 'Go Study Notebook',
+          nbSub: 'Save concept notes in plain text and attach board diagrams directly from your Sandbox Board to illustrate each idea.',
+          nbSidebarHdr: 'Folders & Notes',
+          toggleHideSb: '◀ Hide Sidebar',
+          toggleShowSb: '▶ Show Sidebar',
+          newNote: '+ New Note',
+          exportLectures: 'Export JSON',
+          importLectures: 'Import JSON',
+          createLecFolder: '+ Folder',
+          searchProblemsPh: 'Search problems...',
+          newFolderPh: 'New folder...',
+          searchNotesPh: 'Search notes & remarks...',
+          editModalTitle: 'Edit Question Details',
+          saveModalTitle: 'Save Board Position as Question',
+          cancel: 'Cancel',
+          saveChanges: 'Save Changes',
+          saveQuestionConfirm: 'Save Question',
+          allQuestions: 'All Questions',
+          uncategorized: 'Uncategorized',
+          rootUnfiled: 'Root (Unfiled)',
+          notesSec: '📚 Notes',
+          solSec: '🧩 Problem Solutions',
+          previewRead: 'Preview Read Mode',
+          editPage: 'Edit Page',
+          copyLink: 'Copy Link',
+          backToQ: '← Back to Question',
+          firstBlack: '1st: Black',
+          firstWhite: '1st: White'
+        },
+        zh: {
+          brand: '圍棋學習棋盤',
+          tabBoard: '1. 自由棋盤',
+          tabShapes: '2. 常見眼形',
+          tabDatabase: '3. 題庫',
+          tabLectures: '4. 學習筆記',
+          backupAll: '全部備份',
+          restoreAll: '還原備份',
+          langBtn: 'EN',
+          capturedLbl: '提子：',
+          movesLbl: '手數：',
+          nextBlack: '下一手：黑',
+          nextWhite: '下一手：白',
+          freeBlack: '自由擺黑',
+          freeWhite: '自由擺白',
+          modeErase: '模式：刪除棋子',
+          modeLabel: '模式：A/B/C 標記',
+          modeAltHtml: '輪流對弈 <kbd class="ml-1 opacity-60 font-sans">[A]</kbd>',
+          modeBlackHtml: '<span class="w-2.5 h-2.5 rounded-full bg-stone-900 inline-block"></span> 擺黑 <kbd class="opacity-60 font-sans">[B]</kbd>',
+          modeWhiteHtml: '<span class="w-2.5 h-2.5 rounded-full bg-white border border-stone-400 inline-block"></span> 擺白 <kbd class="opacity-60 font-sans">[W]</kbd>',
+          modeEraseHtml: '刪子 <kbd class="ml-1 opacity-60 font-sans">[E]</kbd>',
+          modeLabelHtml: '標記 A/B/C <kbd class="ml-1 opacity-60 font-sans">[M]</kbd>',
+          undo: '悔棋 [Z]',
+          redo: '重做 [Y]',
+          numsOn: '手數開 [N]',
+          numsOff: '手數關 [N]',
+          coords: '座標 [C]',
+          capture: '提子 [K]',
+          sound: '音效 [S]',
+          score: '點目',
+          clear: '清空 [X]',
+          importSgf: '匯入 SGF',
+          exportSgf: '匯出 SGF',
+          saveQuestionBtn: '+ 儲存題目 [Q]',
+          prevQ: '← 上一題',
+          nextQ: '下一題 →',
+          solNoteArrow: '解答筆記 →',
+          editInfoBtn: '編輯資料',
+          resetBaseBtn: '回到開局 [R]',
+          dismissBtn: '關閉',
+          saveMoveRemark: '儲存手順備註',
+          scoreModeLbl: '點目模式（點擊死子標記）：',
+          ruleTerr: '韓日規則（+6.5目，數目）',
+          ruleChin: '中國規則（+7.5目，數子）',
+          exitScoreMode: '退出點目',
+          shapeLibLbl: '眼形庫：',
+          loadShapeBtn: '載入眼形',
+          shapeHintDefault: '選擇下方任一經典眼形卡片，查看急所或在棋盤上測試。',
+          dbTitle: '個人題庫',
+          dbSub: '在自由棋盤擺好棋形後，點擊「+ 儲存題目 [Q]」即可將題目歸類至資料夾。',
+          goToBoardFromDb: '+ 前往棋盤新增題目',
+          exportDb: '匯出 JSON',
+          importDb: '匯入 JSON',
+          foldersTitle: '資料夾',
+          createFolder: '新增',
+          diffLbl: '難度：',
+          diffAll: '全部',
+          diffEasy: '初級',
+          diffMed: '中級',
+          diffHard: '高級',
+          cornerZoom: '角落放大',
+          delFolder: '刪除此資料夾',
+          nbTitle: '圍棋學習筆記',
+          nbSub: '用純文字撰寫棋理筆記，並直接嵌入自由棋盤的互動棋譜來說明每個觀念。',
+          nbSidebarHdr: '資料夾與筆記',
+          toggleHideSb: '◀ 隱藏側欄',
+          toggleShowSb: '▶ 顯示側欄',
+          newNote: '+ 新增筆記',
+          exportLectures: '匯出 JSON',
+          importLectures: '匯入 JSON',
+          createLecFolder: '+ 資料夾',
+          searchProblemsPh: '搜尋題目...',
+          newFolderPh: '新增資料夾...',
+          searchNotesPh: '搜尋筆記與解說...',
+          editModalTitle: '編輯題目資料',
+          saveModalTitle: '儲存棋局為題目',
+          cancel: '取消',
+          saveChanges: '儲存變更',
+          saveQuestionConfirm: '儲存題目',
+          allQuestions: '全部題目',
+          uncategorized: '未分類',
+          rootUnfiled: '根目錄 (未分類)',
+          notesSec: '📚 筆記',
+          solSec: '🧩 題庫解答',
+          previewRead: '閱讀模式',
+          editPage: '編輯模式',
+          copyLink: '複製連結',
+          backToQ: '← 返回題目',
+          firstBlack: '黑先',
+          firstWhite: '白先'
+        }
+      };
+
+      function t(key) {
+        return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
+      }
+
+      function applyLanguage() {
+        const setTxt = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = t(key); };
+        const setPh = (id, key) => { const el = document.getElementById(id); if (el) el.placeholder = t(key); };
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const k = el.getAttribute('data-i18n');
+          if (k) el.textContent = t(k);
+        });
+
+        const brandEl = document.querySelector('#appShell .font-semibold.text-stone-800');
+        if (brandEl) brandEl.textContent = t('brand');
+
+        const tabBoard = document.querySelector('[data-tab="board"]');
+        const tabShapes = document.querySelector('[data-tab="shapes"]');
+        const tabDbSpan = document.querySelector('[data-tab="database"] > span:first-child');
+        const tabLecSpan = document.querySelector('[data-tab="lectures"] > span:first-child');
+        if (tabBoard) tabBoard.textContent = t('tabBoard');
+        if (tabShapes) tabShapes.textContent = t('tabShapes');
+        if (tabDbSpan) tabDbSpan.textContent = t('tabDatabase');
+        if (tabLecSpan) tabLecSpan.textContent = t('tabLectures');
+
+        setTxt('btnBackupAll', 'backupAll');
+        const restoreLbl = document.querySelector('label[for="inputRestoreAll"]');
+        if (restoreLbl) restoreLbl.textContent = t('restoreAll');
+        if (btnLangToggle) btnLangToggle.textContent = t('langBtn');
+
+        // Placement mode buttons
+        const modeMap = { alternate: 'modeAltHtml', black: 'modeBlackHtml', white: 'modeWhiteHtml', erase: 'modeEraseHtml', label: 'modeLabelHtml' };
+        Object.entries(modeMap).forEach(([m, k]) => {
+          const btn = document.querySelector(`.mode-btn[data-mode="${m}"]`);
+          if (btn) btn.innerHTML = t(k);
+        });
+
+        setTxt('btnUndo', 'undo');
+        setTxt('btnRedo', 'redo');
+        setTxt('btnCoords', 'coords');
+        setTxt('btnCapture', 'capture');
+        setTxt('btnSound', 'sound');
+        setTxt('btnScoreMode', 'score');
+        setTxt('btnClear', 'clear');
+        const sgfLbl = document.querySelector('label[for="inputSandboxSgf"]');
+        if (sgfLbl) sgfLbl.textContent = t('importSgf');
+        setTxt('btnExportSandboxSgf', 'exportSgf');
+        setTxt('btnOpenSaveModal', 'saveQuestionBtn');
+
+        setTxt('btnPrevQuestion', 'prevQ');
+        setTxt('btnNextQuestion', 'nextQ');
+        setTxt('btnOpenLinkedSolNote', 'solNoteArrow');
+        setTxt('btnEditActiveQuestion', 'editInfoBtn');
+        setTxt('btnResetBaseline', 'resetBaseBtn');
+        setTxt('btnExitStudy', 'dismissBtn');
+        setTxt('btnSaveMoveComment', 'saveMoveRemark');
+        if (btnToggleStudyFirstColor && !btnToggleStudyFirstColor.classList.contains('hidden')) {
+          btnToggleStudyFirstColor.textContent = nextColor === 1 ? t('firstBlack') : t('firstWhite');
+        }
+
+        const scoreBarLbl = document.querySelector('#scoreSummaryBar .font-bold');
+        if (scoreBarLbl) scoreBarLbl.textContent = t('scoreModeLbl');
+        const optTerr = document.querySelector('#scoreRuleSelect option[value="territory"]');
+        const optChin = document.querySelector('#scoreRuleSelect option[value="chinese"]');
+        if (optTerr) optTerr.textContent = t('ruleTerr');
+        if (optChin) optChin.textContent = t('ruleChin');
+        setTxt('btnExitScoreMode', 'exitScoreMode');
+
+        // Module 2
+        const shapeLibSpan = document.querySelector('#moduleShapes .font-semibold.text-stone-700');
+        if (shapeLibSpan) shapeLibSpan.textContent = t('shapeLibLbl');
+        setTxt('btnLoadShape', 'loadShapeBtn');
+        const shapeHintEl = document.getElementById('shapeHint');
+        if (shapeHintEl && !activeTargetType) shapeHintEl.textContent = t('shapeHintDefault');
+
+        // Module 3
+        const dbH2 = document.querySelector('#moduleDatabase h2');
+        const dbP = document.querySelector('#moduleDatabase p');
+        if (dbH2) dbH2.textContent = t('dbTitle');
+        if (dbP) dbP.textContent = t('dbSub');
+        setTxt('btnGoToBoardFromDb', 'goToBoardFromDb');
+        setTxt('btnExportDb', 'exportDb');
+        const impDbLbl = document.querySelector('label[for="inputImportDb"]');
+        if (impDbLbl) impDbLbl.textContent = t('importDb');
+        const dbFoldersHdr = document.querySelector('#moduleDatabase .uppercase.tracking-wider');
+        if (dbFoldersHdr) dbFoldersHdr.textContent = t('foldersTitle');
+        setTxt('btnCreateFolder', 'createFolder');
+        const diffLblEl = document.querySelector('#moduleDatabase .text-xs.text-stone-500');
+        if (diffLblEl && (diffLblEl.textContent.includes('Difficulty') || diffLblEl.textContent.includes('難度'))) {
+          diffLblEl.textContent = t('diffLbl');
+        }
+        const diffBtnMap = { '__ALL__': 'diffAll', 'Easy': 'diffEasy', 'Medium': 'diffMed', 'Hard': 'diffHard' };
+        Object.entries(diffBtnMap).forEach(([val, key]) => {
+          const b = document.querySelector(`.diff-filter-btn[data-diff-filter="${val}"]`);
+          if (b) b.textContent = t(key);
+        });
+        setTxt('btnCornerZoom', 'cornerZoom');
+        setTxt('btnDeleteCurrentFolder', 'delFolder');
+
+        setPh('problemSearchInput', 'searchProblemsPh');
+        setPh('newFolderInput', 'newFolderPh');
+        setPh('lectureSearchInput', 'searchNotesPh');
+        setPh('newLectureFolderInput', 'newFolderPh');
+
+        // Module 4
+        const nbH2 = document.querySelector('#moduleLectures h2');
+        const nbP = document.querySelector('#moduleLectures p');
+        if (nbH2) nbH2.textContent = t('nbTitle');
+        if (nbP) nbP.textContent = t('nbSub');
+        const nbSbHdr = document.querySelector('#lectureSidebar .uppercase.tracking-wider');
+        if (nbSbHdr) nbSbHdr.textContent = t('nbSidebarHdr');
+
+        if (btnToggleLectureSidebar) {
+          btnToggleLectureSidebar.textContent = lectureSidebarCollapsed ? t('toggleShowSb') : t('toggleHideSb');
+        }
+        setTxt('btnNewLecture', 'newNote');
+        setTxt('btnExportLectures', 'exportLectures');
+        const impLecLbl = document.querySelector('label[for="inputImportLectures"]');
+        if (impLecLbl) impLecLbl.textContent = t('importLectures');
+        setTxt('btnCreateLectureFolder', 'createLecFolder');
+
+        const editTitleH3 = document.querySelector('#editQuestionModal h3');
+        if (editTitleH3) editTitleH3.textContent = t('editModalTitle');
+        setTxt('btnCancelEditQModal', 'cancel');
+        setTxt('btnConfirmEditQModal', 'saveChanges');
+        const saveTitleH3 = document.querySelector('#saveQuestionModal h3');
+        if (saveTitleH3) saveTitleH3.textContent = t('saveModalTitle');
+        setTxt('btnCancelSaveModal', 'cancel');
+        setTxt('btnConfirmSaveQuestion', 'saveQuestionConfirm');
+
+        if (typeof updateUI === 'function') updateUI();
+        if (typeof renderDatabase === 'function') renderDatabase();
+        if (typeof renderLectures === 'function') renderLectures();
+      }
+
+      if (btnLangToggle) {
+        btnLangToggle.addEventListener('click', () => {
+          currentLang = currentLang === 'en' ? 'zh' : 'en';
+          localStorage.setItem(STORAGE_LANG_KEY, currentLang);
+          applyLanguage();
+        });
+      }
+
       window.onload = () => {
         loadDatabaseFromStorage();
         renderShapesCatalog();
@@ -4928,6 +5343,7 @@
           resetState(19);
         }
         handleHashRoute();
+        applyLanguage();
       };
     })();
   </script>
