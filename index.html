@@ -3515,7 +3515,7 @@
           return;
         }
 
-        questionsGrid.innerHTML = filtered.map(q => {
+        questionsGrid.innerHTML = filtered.map((q, qIdx) => {
           normalizeQuestionSolutions(q);
           const thumb = renderMiniBoardSvg(q.board, q.boardSize || 19, q.labels || {}, null, cornerZoomEnabled);
           const turnText = (q.firstTurn || 1) === 1 ? t('blackToPlay') : t('whiteToPlay');
@@ -3532,11 +3532,13 @@
           ).join('');
 
           return `
-            <div class="bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col justify-between gap-3 hover:border-stone-400 transition">
+            <div draggable="true" data-q-drag="${q.id}" class="q-drag-card bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col justify-between gap-3 hover:border-stone-400 transition">
               <div class="flex flex-col gap-2">
                 <div class="flex items-start justify-between gap-2">
                   <div>
                     <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="cursor-grab opacity-45 hover:opacity-90 text-xs select-none" title="Drag card to reorder">⋮⋮</span>
+                      <span class="text-[11px] font-bold text-stone-400">#${qIdx + 1}</span>
                       <h3 class="text-sm font-semibold text-stone-900">${q.title}</h3>
                       <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${diffInfo.cls}">${diffInfo.label}</span>
                     </div>
@@ -3569,7 +3571,9 @@
                     ${diffOpts}
                   </select>
                 </div>
-                <div class="flex gap-1.5">
+                <div class="flex gap-1.5 items-center">
+                  <button type="button" data-q-move-prev="${q.id}" title="Move earlier" ${qIdx === 0 ? 'disabled' : ''} class="py-1.5 px-2 rounded-lg text-xs font-bold border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 disabled:opacity-35 transition">&larr;</button>
+                  <button type="button" data-q-move-next="${q.id}" title="Move later" ${qIdx === filtered.length - 1 ? 'disabled' : ''} class="py-1.5 px-2 rounded-lg text-xs font-bold border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 disabled:opacity-35 transition">&rarr;</button>
                   <button type="button" data-load-q="${q.id}" class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-stone-900 text-white hover:bg-stone-700 transition">
                     ${t('practiceArrow')}
                   </button>
@@ -3585,7 +3589,75 @@
       }
 
       if (questionsGrid) {
+        let draggedQuestionId = null;
+
+        questionsGrid.addEventListener('dragstart', (e) => {
+          const card = e.target.closest('[data-q-drag]');
+          if (!card) return;
+          draggedQuestionId = card.getAttribute('data-q-drag');
+          card.classList.add('opacity-50');
+          if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+        });
+
+        questionsGrid.addEventListener('dragend', () => {
+          draggedQuestionId = null;
+          questionsGrid.querySelectorAll('[data-q-drag]').forEach(c => c.classList.remove('opacity-50', 'ring-2', 'ring-amber-500'));
+        });
+
+        questionsGrid.addEventListener('dragover', (e) => {
+          if (!draggedQuestionId) return;
+          const card = e.target.closest('[data-q-drag]');
+          if (card && card.getAttribute('data-q-drag') !== draggedQuestionId) {
+            e.preventDefault();
+            card.classList.add('ring-2', 'ring-amber-500');
+          }
+        });
+
+        questionsGrid.addEventListener('dragleave', (e) => {
+          const card = e.target.closest('[data-q-drag]');
+          if (card) card.classList.remove('ring-2', 'ring-amber-500');
+        });
+
+        questionsGrid.addEventListener('drop', (e) => {
+          if (!draggedQuestionId) return;
+          const card = e.target.closest('[data-q-drag]');
+          if (!card) return;
+          e.preventDefault();
+          card.classList.remove('ring-2', 'ring-amber-500');
+          const targetId = card.getAttribute('data-q-drag');
+          if (targetId && targetId !== draggedQuestionId) {
+            const fromIdx = questions.findIndex(q => q.id === draggedQuestionId);
+            const toIdx = questions.findIndex(q => q.id === targetId);
+            if (fromIdx >= 0 && toIdx >= 0) {
+              const [moved] = questions.splice(fromIdx, 1);
+              questions.splice(toIdx, 0, moved);
+              saveDatabaseToStorage(true);
+              renderDatabase();
+            }
+          }
+          draggedQuestionId = null;
+        });
+
         questionsGrid.addEventListener('click', (e) => {
+          const prevOrd = e.target.closest('[data-q-move-prev]');
+          const nextOrd = e.target.closest('[data-q-move-next]');
+          if (prevOrd || nextOrd) {
+            const qId = (prevOrd || nextOrd).getAttribute(prevOrd ? 'data-q-move-prev' : 'data-q-move-next');
+            const dir = prevOrd ? -1 : 1;
+            const visibleIds = Array.from(questionsGrid.querySelectorAll('[data-q-drag]')).map(el => el.getAttribute('data-q-drag'));
+            const vPos = visibleIds.indexOf(qId);
+            const swapPos = vPos + dir;
+            if (vPos >= 0 && swapPos >= 0 && swapPos < visibleIds.length) {
+              const i1 = questions.findIndex(q => q.id === visibleIds[vPos]);
+              const i2 = questions.findIndex(q => q.id === visibleIds[swapPos]);
+              if (i1 >= 0 && i2 >= 0) {
+                [questions[i1], questions[i2]] = [questions[i2], questions[i1]];
+                saveDatabaseToStorage(true);
+                renderDatabase();
+              }
+            }
+            return;
+          }
           const loadBtn = e.target.closest('[data-load-q]');
           if (loadBtn) { loadQuestionToBoard(loadBtn.getAttribute('data-load-q'), true, false, 0); return; }
 
