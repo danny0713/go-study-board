@@ -420,10 +420,10 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         <!-- File-Manager Style Left Sidebar (Folders + Root Notes) -->
-        <div id="lectureSidebar" class="lg:col-span-3 bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col gap-2.5 lg:sticky lg:top-4">
+        <div id="lectureSidebar" class="lg:col-span-3 min-w-0 bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col gap-2.5 lg:sticky lg:top-4">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Folders &amp; Notes</span>
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 flex-wrap">
               <button type="button" id="btnWidenLectureSidebar" title="Toggle wider sidebar" class="hidden lg:inline-block text-[11px] px-1.5 py-0.5 rounded border border-stone-200 text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition">
                 ↔
               </button>
@@ -447,7 +447,7 @@
         </div>
 
         <!-- Full-Width Tutorial Page Area -->
-        <div id="lectureDetailArea" class="lg:col-span-9 bg-white rounded-xl p-5 sm:p-7 shadow-sm border border-stone-200 flex flex-col gap-5"></div>
+        <div id="lectureDetailArea" class="lg:col-span-9 min-w-0 bg-white rounded-xl p-5 sm:p-7 shadow-sm border border-stone-200 flex flex-col gap-5"></div>
       </div>
     </section>
 
@@ -3534,27 +3534,30 @@
           return `
             <div draggable="true" data-q-drag="${q.id}" class="q-drag-card bg-white rounded-xl p-3.5 shadow-sm border border-stone-200 flex flex-col justify-between gap-3 hover:border-stone-400 transition">
               <div class="flex flex-col gap-2">
-                <div class="flex items-start justify-between gap-2">
-                  <div>
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                      <span class="cursor-grab opacity-45 hover:opacity-90 text-xs select-none" title="Drag card to reorder">⋮⋮</span>
-                      <span class="text-[11px] font-bold text-stone-400">#${qIdx + 1}</span>
-                      <h3 class="text-sm font-semibold text-stone-900">${q.title}</h3>
-                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${diffInfo.cls}">${diffInfo.label}</span>
-                    </div>
-                    <span class="text-[11px] text-stone-500">${q.boardSize || 19}×${q.boardSize || 19} · ${turnText}</span>
-                  </div>
-                  <div class="flex items-center gap-1 shrink-0">
-                    <button type="button" data-mastery-q="${q.id}" class="text-[11px] font-semibold px-1.5 py-0.5 rounded border transition ${q.mastered ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'}">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="cursor-grab opacity-45 hover:opacity-90 text-xs select-none" title="Drag card to reorder">⋮⋮</span>
+                    <span class="text-[11px] font-bold text-stone-400">#${qIdx + 1}</span>
+                    <button type="button" data-mastery-q="${q.id}" class="text-[11px] font-semibold px-1.5 py-0.5 rounded border whitespace-nowrap transition ${q.mastered ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'}">
                       ${q.mastered ? t('masteredBadge') : t('needReviewBadge')}
                     </button>
-                    <button type="button" data-edit-q="${q.id}" title="Edit title &amp; description" class="text-xs text-stone-500 hover:text-stone-900 px-1.5 py-0.5 rounded border border-stone-200 bg-stone-50">
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" data-edit-q="${q.id}" title="Edit title &amp; description" class="text-[11px] text-stone-600 hover:text-stone-900 px-1.5 py-0.5 rounded border border-stone-200 bg-stone-50">
                       ${t('editBtn')}
                     </button>
-                    <button type="button" data-del-q="${q.id}" title="Delete question" class="text-xs text-stone-400 hover:text-red-600 px-1.5 py-0.5 rounded">
+                    <button type="button" data-del-q="${q.id}" title="Delete question" class="text-[11px] text-stone-400 hover:text-red-600 px-1.5 py-0.5 rounded">
                       ${t('deleteBtn')}
                     </button>
                   </div>
+                </div>
+
+                <div>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <h3 class="text-sm font-semibold text-stone-900 leading-snug">${q.title}</h3>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${diffInfo.cls}">${diffInfo.label}</span>
+                  </div>
+                  <div class="text-[11px] text-stone-500 mt-0.5 whitespace-nowrap">${q.boardSize || 19}×${q.boardSize || 19} · ${turnText}</div>
                 </div>
 
                 <div class="flex justify-center py-1">${thumb}</div>
@@ -5179,8 +5182,8 @@
 
         lectureDetailArea.innerHTML = `
           <!-- Page Title, Hash Route Badge, & Read/Edit Toggle -->
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-stone-200">
-            <div class="flex-1 min-w-[220px]">
+          <div class="flex flex-col gap-2.5 pb-3 border-b border-stone-200">
+            <div class="w-full min-w-0">
               ${(() => {
                 const getBreadcrumb = (fId) => {
                   const parts = [];
